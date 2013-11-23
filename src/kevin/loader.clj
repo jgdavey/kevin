@@ -2,70 +2,27 @@
   "To use, download the movies, actors and actresses lists from a mirror on
   http://www.imdb.com/interfaces, and copy them (still zipped) to the resources
   folder. You can then run `lein run -m kevin.loader`"
-  (:require [clojure.java.io                         :as io]
-            [cheshire.custom                         :as json]
-            [clj-http.client                         :as http]
-            [clojurewerkz.neocons.rest               :as nr]
-            [clojurewerkz.neocons.rest.cypher        :as cypher]
-            [clojurewerkz.neocons.rest.nodes         :as nn]
-            [clojurewerkz.neocons.rest.relationships :as nrel]
-            [clojurewerkz.neocons.rest.batch :refer [perform]]
-            [clojurewerkz.neocons.rest.records :refer [node-index-lookup-location-for]]))
+  (:require [clojure.java.io :as io]
+            [datomic.api :as d :refer [q db]]))
 
-(def url "http://localhost:7474/db/data/")
+(def uri "datomic:dev://localhost:4334/movies")
+(def schema (read-string (slurp "resources/schema.edn")))
 (def ^:dynamic *batch-size* 500)
+
+(defn ensure-schema [conn]
+  (or (-> conn d/db (d/entid :actor/name))
+      @(d/transact conn schema)))
+
+(defn ensure-db [db-uri]
+  (let [newdb? (d/create-database db-uri)
+        conn (d/connect db-uri)]
+    (ensure-schema conn)
+    conn))
+
+(def conn (ensure-db uri))
 
 (def char-quote "\"")
 (def char-tab "\t")
-
-(defn id->ref [i]
-  (str "{" i "}"))
-
-(defn create-batch-and-index [xs index attribute]
-  (let [idx (str "/index/node/" index)
-        batched (doall (mapcat (fn [x i]
-                                 [{:body   x
-                                   :id     i
-                                   :to     "/node"
-                                   :method "POST" }
-                                 {:body   {
-                                           :uri (id->ref i)
-                                           :key attribute
-                                           :value (attribute x) }
-                                   :to     idx
-                                   :method "POST" }]) xs (range)))]
-    (perform batched)))
-
-(defn movie-from-role [role]
-  (try (nn/find-one "Movie" "title" role)))
-
-(defn role-to-op [actor-uri role i]
-  (if-let [movie (movie-from-role role)]
-    {:body   {:to (:location-uri movie) :type "acted_in" }
-     :to     (str actor-uri "/relationships")
-     :method "POST" }))
-
-(defn actor-to-op [actor-movies i]
-  (let [{:keys [actor movies]} actor-movies
-        idx "/index/node/Actor"
-        ret-uri (id->ref i)
-        actor-ops [{:body   { :name actor }
-                    :id     i
-                    :to     "/node"
-                    :method "POST" }
-                   {:body   {:uri ret-uri
-                             :key :name
-                             :value actor }
-                    :to     idx
-                    :method "POST" } ]]
-    (concat actor-ops
-            (filter identity (map (partial role-to-op ret-uri) movies (iterate inc (inc i)))))))
-
-(defn batch-actors-ops [actors]
-  (let [counts (map #(count (:movies %)) actors)
-        ids (reductions (comp inc +) 0 counts)
-        ops (mapcat actor-to-op actors ids)]
-    (doall ops)))
 
 (defn movie-title [line]
   (let [tab (. line (indexOf "\t"))]
@@ -90,8 +47,22 @@
     (filter remove-sep (partition-by pred coll))))
 
 (defn store-movies [batch]
-  (let [titles (map (fn [b] { :title b }) batch)]
-    (create-batch-and-index titles "Movie" :title)))
+  (let [titles (map (fn [b] { :db/id (d/tempid :db.part/user) :movie/title b }) batch)]
+    @(d/transact conn titles)))
+
+(def actor-query '[:find ?e :in $ ?name :where [?e :actor/name ?name]])
+
+(defn actor-tx-data
+  ([a] (actor-tx-data (db conn) a))
+  ([d {:keys [actor movies]}]
+    (when (zero? (count (q actor-query d actor)))
+      (let [actor-id  (d/tempid :db.part/user)
+            movie-txs (map (fn [m] {:movie/title m
+                                :db/id (d/tempid :db.part/user)
+                                :_movies actor-id
+                                }) movies)
+            actor-tx  { :db/id actor-id, :actor/name actor }]
+      (concat [actor-tx] movie-txs)))))
 
 (defn parse-movies [lines]
   (let [titles (filter identity (map movie-title (filter movie-line? lines)))]
@@ -113,13 +84,15 @@
       { :actor actor :movies movies })))
 
 (defn parse-actors [lines]
-  (let [actors-lines (split-by empty? (drop 3 lines))
-        actors-and-roles (filter identity (map parse-actor actors-lines))
-        batches (partition-all *batch-size* actors-and-roles)]
-    (doseq [batch batches]
-      (http/with-connection-pool { :threads 3 }
-        (perform (batch-actors-ops batch))
-        (print ".") (flush)))
+  (let [actors-and-roles (->> lines
+                              (drop 3)
+                              (split-by empty?)
+                              (map parse-actor)
+                              (filter identity))]
+    (doseq [batch (partition-all *batch-size* actors-and-roles)]
+      (let [d (db conn)]
+        @(d/transact conn (mapcat (partial actor-tx-data d) batch)))
+      (print ".") (flush))
     (println "done")))
 
 (defn load-file-with-parser
@@ -135,10 +108,10 @@
           (parser lines))))))
 
 (defn -main [& args]
-  (nr/connect! url)
-  (println "Loading movies...")
-  (load-file-with-parser "resources/movies.list.gz" parse-movies :start-at "MOVIES LIST")
+  ; (println "Loading movies...")
+  ; (load-file-with-parser "resources/movies.list.gz" parse-movies :start-at "MOVIES LIST")
   (println "Loading actors...")
   (load-file-with-parser "resources/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
   (println "Loading actresses...")
-  (load-file-with-parser "resources/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST"))
+  (load-file-with-parser "resources/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
+)
