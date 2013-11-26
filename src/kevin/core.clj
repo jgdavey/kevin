@@ -1,6 +1,5 @@
 (ns kevin.core
-  (:require [kevin.loader :refer [conn uri]]
-            [datomic.api :as d :refer [q db]]
+  (:require [datomic.api :as d :refer [q db]]
             [clojure.set :refer [union]]))
 
 (defn actor-name->eid

@@ -5,5 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [com.datomic/datomic-pro "0.8.4260"]]
-  :jvm-opts ["-Xmx6g"]
+  :profiles {:dev {:source-paths ["dev"]
+                   :dependencies [[org.clojure/tools.namespace "0.2.4"]
+                                  [org.clojure/java.classpath "0.2.0"]]}}
+  :jvm-opts ["-Xmx2g"]
   )

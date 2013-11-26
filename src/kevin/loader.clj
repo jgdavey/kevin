@@ -3,23 +3,12 @@
   http://www.imdb.com/interfaces, and copy them (still zipped) to the resources
   folder. You can then run `lein run -m kevin.loader`"
   (:require [clojure.java.io :as io]
-            [datomic.api :as d :refer [q db]]))
+            [datomic.api :as d :refer [q db]]
+            [kevin.system :as system]))
 
-(def uri "datomic:dev://localhost:4334/movies")
-(def schema (read-string (slurp "resources/schema.edn")))
+(def conn nil)
+(def system (system/system))
 (def ^:dynamic *batch-size* 500)
-
-(defn ensure-schema [conn]
-  (or (-> conn d/db (d/entid :actor/name))
-      @(d/transact conn schema)))
-
-(defn ensure-db [db-uri]
-  (let [newdb? (d/create-database db-uri)
-        conn (d/connect db-uri)]
-    (ensure-schema conn)
-    conn))
-
-(def conn (ensure-db uri))
 
 (def char-quote "\"")
 (def char-tab "\t")
@@ -108,6 +97,8 @@
           (parser lines))))))
 
 (defn -main [& args]
+  (system/start)
+  (alter-var-root #'conn (:connection (:db system)))
   ; (println "Loading movies...")
   ; (load-file-with-parser "resources/movies.list.gz" parse-movies :start-at "MOVIES LIST")
   (println "Loading actors...")
