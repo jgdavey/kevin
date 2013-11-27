@@ -28,5 +28,6 @@
   "Performs side effects to shut down the system and release its
   resources. Returns an updated instance of the system."
   [system]
-  (d/release (:conn (:db system)))
+  (when-let [conn (:conn (:db system))]
+    (d/release conn))
   (assoc-in system [:db :conn] nil))

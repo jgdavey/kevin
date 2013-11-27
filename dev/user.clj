@@ -4,7 +4,7 @@
             [clojure.pprint :refer (pprint)]
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer (refresh refresh-all)]
-            [datomic.api :as d]
+            [datomic.api :as d :refer (db q)]
             [kevin.system :as sys]
             [kevin.core :refer :all]))
 
