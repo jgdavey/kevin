@@ -69,13 +69,14 @@
   (let [[actor title & rest] (clojure.string/split actor-line #"\t+")
         roles (map extract-role (filter role-line? (map #(.trim %) (conj roles title))))
         movies (filter identity roles)]
-    (when (not (empty? movies))
+    (when (and (not (empty? movies)) actor)
       { :actor actor :movies movies })))
 
 (defn parse-actors [lines]
   (let [actors-and-roles (->> lines
                               (drop 3)
                               (split-by empty?)
+                              (filter identity)
                               (map parse-actor)
                               (filter identity))]
     (doseq [batch (partition-all *batch-size* actors-and-roles)]

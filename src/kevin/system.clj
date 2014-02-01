@@ -14,7 +14,7 @@
 (defn system
   "Returns a new instance of the whole application."
   []
-  {:db {:uri "datomic:dev://localhost:4334/movies"}})
+  {:db {:uri "datomic:dev://localhost:4884/movies"}})
 
 (defn start
   "Performs side effects to initialize the system, acquire resources,
