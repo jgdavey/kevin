@@ -2,8 +2,10 @@
   "To use, download the movies, actors and actresses lists from a mirror on
   http://www.imdb.com/interfaces, and copy them (still zipped) to the resources
   folder. You can then run `lein run -m kevin.loader`"
+  (:gen-class)
   (:require [clojure.java.io :as io]
             [datomic.api :as d :refer [q db]]
+            [kevin.core :refer [actor-name->eid]]
             [kevin.system :as system]))
 
 (def conn nil)
@@ -39,12 +41,10 @@
   (let [titles (map (fn [b] { :db/id (d/tempid :db.part/user) :movie/title b }) batch)]
     @(d/transact conn titles)))
 
-(def actor-query '[:find ?e :in $ ?name :where [?e :actor/name ?name]])
-
 (defn actor-tx-data
   ([a] (actor-tx-data (db conn) a))
   ([d {:keys [actor movies]}]
-    (when (zero? (count (q actor-query d actor)))
+    (when-not (actor-name->eid d actor)
       (let [actor-id  (d/tempid :db.part/user)
             movie-txs (map (fn [m] {:movie/title m
                                 :db/id (d/tempid :db.part/user)
@@ -73,37 +73,43 @@
       { :actor actor :movies movies })))
 
 (defn parse-actors [lines]
-  (let [actors-and-roles (->> lines
-                              (drop 3)
-                              (split-by empty?)
-                              (filter identity)
-                              (map parse-actor)
-                              (filter identity))]
-    (doseq [batch (partition-all *batch-size* actors-and-roles)]
-      (let [d (db conn)]
-        @(d/transact conn (mapcat (partial actor-tx-data d) batch)))
-      (print ".") (flush))
-    (println "done")))
+  (try
+    (let [actors-and-roles (->> lines
+                                (drop 3)
+                                (split-by empty?)
+                                (filter identity)
+                                (map parse-actor)
+                                (filter identity))]
+      (doseq [batch (partition-all *batch-size* actors-and-roles)]
+        (let [d (db conn)
+              tx (mapcat (partial actor-tx-data d) batch)]
+          (if (empty? tx)
+            (print "-")
+            (do (d/transact-async conn tx)
+                (print "."))))
+        (flush)))
+    (catch Exception e))
+  (println "done"))
 
 (defn load-file-with-parser
   [file parser & {:keys [start-at]}]
   (with-open [in (io/reader
                    (java.util.zip.GZIPInputStream.
                      (io/input-stream file)))]
-    (let [lines (line-seq in)]
-      (loop [[line & lines] lines
-             state { :header true }]
-        (if (:header state)
-          (recur lines { :header (not= line start-at) })
-          (parser lines))))))
+      (let [lines (line-seq in)]
+        (loop [[line & lines] lines
+              state { :header true }]
+          (if (:header state)
+            (recur lines { :header (not= line start-at) })
+            (parser lines))))))
 
 (defn -main [& args]
-  (system/start)
-  (alter-var-root #'conn (:connection (:db system)))
-  ; (println "Loading movies...")
-  ; (load-file-with-parser "resources/movies.list.gz" parse-movies :start-at "MOVIES LIST")
-  (println "Loading actors...")
-  (load-file-with-parser "resources/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
-  (println "Loading actresses...")
-  (load-file-with-parser "resources/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
-)
+  (let [system (system/start (system/system))]
+    (alter-var-root #'conn (constantly (:conn (:db system))))
+    (println "Loading movies...")
+    (load-file-with-parser "resources/movies.list.gz" parse-movies :start-at "MOVIES LIST")
+    (println "Loading actors...")
+    (load-file-with-parser "resources/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
+    (println "Loading actresses...")
+    (load-file-with-parser "resources/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
+  ))
