@@ -1,6 +1,7 @@
 (ns kevin.core
   (:require [datomic.api :as d :refer [q db]]
-            [clojure.set :refer [union]]))
+            [clojure.set :refer [union difference]]
+            [clojure.zip :as zip]))
 
 (declare acted-with-rules)
 
@@ -23,47 +24,48 @@
   (-> (eids-with-attr-val db :actor/name name)
     first))
 
+(defn eid->actor-name
+  "db is database value
+  name is the actor's name"
+  [db eid]
+  (-> (d/entity db eid)
+      :actor/name))
+
+(defn actor-movies
+  [db eid]
+  (map :v (d/datoms db :eavt eid :movies)))
+
 (defn immediate-connections
   "d is database value
   eid is actor's entity id"
-  [d eid]
-  (->> (d/entity d eid)
-      :movies
-      (mapcat (comp (partial referring-to d) :db/id))
-       set))
+  [db eid]
+  (->> (actor-movies db eid)
+      (mapcat (partial referring-to db))))
 
-(defn append-immediate-connections [d id-path]
-  (->> (immediate-connections d (last id-path))
-       (map (partial conj id-path))))
+(defn zipper
+  "db is database value
+  eid is actor's entity id"
+  [db eid]
+  (let [children (partial immediate-connections db)
+        branch? (comp seq children)
+        make-node (fn [_ c] c)]
+    (zip/zipper branch? children make-node eid)))
 
-(defn connections-at-degree
-  "d is database value
-  eid is actor's entity id
-  deg is degree of separation (> 0)"
-  [d deg eid]
-  (let [e (d/entid d eid)]
-    (if (zero? deg)
-      #{e}
-      (->> (immediate-connections d e)
-           (pmap (partial connections-at-degree d (dec deg)))
-           (apply union)))))
-
-(def acted-with-rules
-  '[[(acted-with-1 ?e ?x)
-     [?e :movies ?m]
-     [?x :movies ?m]
-     [(!= ?e ?x)]]
-
-    [(acted-with-2 ?e1 ?e2)
-     (acted-with-1 ?e1 ?e2)]
-    [(acted-with-2 ?e1 ?e2)
-     (acted-with-1 ?e1 ?x)
-     (acted-with-1 ?x ?e2)
-     [(!= ?e1 ?e2)]]
-
-    [(acted-with-3 ?e1 ?e2)
-     (acted-with-2 ?e1 ?e2)]
-    [(acted-with-3 ?e1 ?e2)
-     (acted-with-2 ?e1 ?x)
-     (acted-with-2 ?x ?e2)
-     [(!= ?e1 ?e2)]]])
+(defn searcher [root neighbor-fn]
+  (fn [target]
+    (let [queue (conj clojure.lang.PersistentQueue/EMPTY [root])
+          visited #{root}
+          found? (partial = target)]
+      (loop [q queue
+             v visited
+             i 0]
+        (when (seq q)
+          (let [path (peek q)
+                node (last path)]
+            (if (found? node)
+              (do
+                (println "Finished in " i " iterations")
+                path)
+              (let [neighbors (remove v (neighbor-fn node))
+                    paths (map (partial conj path) neighbors)]
+                (recur (into (pop q) paths) (into v neighbors) (inc i))))))))))
