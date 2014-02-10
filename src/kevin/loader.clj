@@ -18,14 +18,14 @@
 (defn movie-title [line]
   (let [tab (. line (indexOf "\t"))]
     (when (not= tab -1)
-      (. line (substring 0 tab) trim))))
+      (.. line (substring 0 tab) trim))))
 
 (defn movie-line? [line]
   (and
     (not (empty? line))
     (not (.startsWith line char-quote))    ; Not a TV series
-    ; (not= -1 (.indexOf line char-tab))    ; Has tab(s)
     (= -1 (.indexOf line "{{SUSPENDED}}")) ; Not bad data
+    (= -1 (.indexOf line "(VG)"))          ; Not a videogame
     (= -1 (.indexOf line "V)"))))          ; Not TV movie or straight to video
 
 (defn role-line? [line]
@@ -63,7 +63,7 @@
 
 (defn extract-role [role-line]
   (let [paren (. role-line (indexOf ")"))]
-    (. role-line (substring 0 (inc paren)) trim)))
+    (.. role-line (substring 0 (inc paren)) trim)))
 
 (defn parse-actor [[actor-line & roles]]
   (let [[actor title & rest] (clojure.string/split actor-line #"\t+")
