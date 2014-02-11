@@ -3,12 +3,21 @@
             [clojure.set :refer [union difference]]
             [clojure.zip :as zip]))
 
-(declare acted-with-rules)
+(defprotocol Eid
+  (e [_]))
+
+(extend-protocol Eid
+  java.lang.Long
+  (e [i] i)
+
+  datomic.Entity
+  (e [ent] (:db/id ent)))
+
 
 (defn referring-to
   "Find all entities referring to an eid as a certain attribute."
   [db eid]
-   (->> (d/datoms db :vaet eid)
+   (->> (d/datoms db :vaet (e eid))
         (map :e)))
 
 (defn eids-with-attr-val
@@ -28,7 +37,7 @@
   "db is database value
   name is the actor's name"
   [db eid]
-  (-> (d/entity db eid)
+  (-> (d/entity db (e eid))
       :actor/name))
 
 (defn actor-movies
