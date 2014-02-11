@@ -1,5 +1,6 @@
 (ns kevin.core
   (:require [datomic.api :as d :refer [q db]]
+            [clojure.string :refer [split join]]
             [clojure.set :refer [union difference]]
             [clojure.zip :as zip]))
 
@@ -13,6 +14,49 @@
   datomic.Entity
   (e [ent] (:db/id ent)))
 
+(def acted-with-rules
+  '[[(acted-with ?e1 ?e2 ?path)
+     [?e1 :movies ?m]
+     [?e2 :movies ?m]
+     [(!= ?e1 ?e2)]
+     [(vector ?e1 ?m) ?path]]
+    [(acted-with-2 ?e1 ?e2 ?path)
+     (acted-with ?e1 ?e2 ?path)]
+    [(acted-with-2 ?e1 ?e2 ?path)
+     (acted-with ?e1 ?x ?p1)
+     (acted-with ?x ?e2 ?p2)
+     [(concat ?p1 ?p2) ?path]]
+    [(acted-with-3 ?e1 ?e2 ?path)
+     (acted-with-2 ?e1 ?e2 ?path)]
+    [(acted-with-3 ?e1 ?e2 ?path)
+     (acted-with-2 ?e1 ?x ?p1)
+     (acted-with ?x ?e2 ?p2)
+     [(concat ?p1 ?p2) ?path]]])
+
+(defn format-query
+  "Makes each word of query required, front-stemmed
+
+  (format-query \"Foo bar\")
+   ;=> \"+Foo* +bar*\"
+
+  This maps to Lucene's QueryParser.parse
+  See http://lucene.apache.org/core/3_6_1/api/core/org/apache/lucene/queryParser/QueryParser.html"
+  [query]
+  (->> (split query #"\s")
+       (map #(str "+" % "*"))
+       (join " ")))
+
+(defn actor-search
+  "query will be passed as-is to Lucene"
+  [db query]
+  (q '[:find ?e ?name
+       :in $ ?search
+       :where [(fulltext $ :actor/name ?search) [[?e ?name]]]]
+     db query))
+
+(defn actor-or-movie-name [db eid]
+  (let [ent (d/entity db (e eid))]
+    (or (:movie/title ent) (:actor/name ent))))
 
 (defn referring-to
   "Find all entities referring to an eid as a certain attribute."
@@ -64,7 +108,8 @@
   (fn [target]
     (let [queue (conj clojure.lang.PersistentQueue/EMPTY [root])
           visited #{root}
-          found? (partial = target)]
+          target-neighbors (neighbor-fn target)
+          found? (fn [n] (some #{n} target-neighbors))]
       (loop [q queue
              v visited
              i 0]
@@ -74,7 +119,7 @@
             (if (found? node)
               (do
                 (println "Finished in " i " iterations")
-                path)
+                (conj path target))
               (let [neighbors (remove v (neighbor-fn node))
                     paths (map (partial conj path) neighbors)]
                 (recur (into (pop q) paths) (into v neighbors) (inc i))))))))))
