@@ -1,0 +1,83 @@
+body {
+    color: #555;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 13px;
+}
+
+h1 {
+    text-align: center;
+}
+
+#container {
+  width: 900px;
+  margin: 0 auto;
+}
+
+fieldset {
+  border: 0 none;
+  margin: 0;
+  padding: 0;
+}
+
+fieldset label {
+  display: inline-block;
+  width: 30px;
+  padding-right: 5px;
+}
+
+form input[type=submit] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-size: 14px;
+  padding: 8px 12px;
+  border: 0 none;
+  border-radius: 5px;
+  background-color: #77b262;
+  color: #fff;
+  cursor: pointer;
+}
+
+#container ul {
+  list-style: none;
+  overflow: hidden;
+  padding: 8px 0;
+  margin: 0;
+  clear: both;
+}
+
+#container ul:hover {
+  background-color: #fffafa;
+}
+
+
+#container li {
+  float: left;
+  height: 15px;
+  padding: 5px 0;
+  line-height: 15px;
+}
+
+#container li:before {
+  content: "⇔";
+  color: #999;
+  font-size: 15px;
+  line-height: 13px;
+  font-weight: normal;
+  padding: 0 12px;
+  float: left;
+}
+
+#container li:nth-of-type(1):before {
+  padding: 0;
+  content: "";
+}
+
+/* movies */
+#container li:nth-of-type(2n) {
+  font-weight: bold;
+}
+
+/* actors */
+#container li:nth-of-type(2n+1) {
+  font-weight: ;
+}

@@ -1,6 +1,6 @@
 (ns kevin.core
   (:require [datomic.api :as d :refer [q db]]
-            [clojure.string :refer [split join]]
+            [clojure.string :refer [split join] :as str]
             [clojure.set :refer [union difference]]
             [clojure.zip :as zip]))
 
@@ -20,14 +20,12 @@
      [?e2 :movies ?m]
      [(!= ?e1 ?e2)]
      [(vector ?e1 ?m) ?path]]
-    [(acted-with-2 ?e1 ?e2 ?path)
+    [(acted-with-1 ?e1 ?e2 ?path)
      (acted-with ?e1 ?e2 ?path)]
     [(acted-with-2 ?e1 ?e2 ?path)
      (acted-with ?e1 ?x ?p1)
      (acted-with ?x ?e2 ?p2)
      [(concat ?p1 ?p2) ?path]]
-    [(acted-with-3 ?e1 ?e2 ?path)
-     (acted-with-2 ?e1 ?e2 ?path)]
     [(acted-with-3 ?e1 ?e2 ?path)
      (acted-with-2 ?e1 ?x ?p1)
      (acted-with ?x ?e2 ?p2)
@@ -43,16 +41,19 @@
   See http://lucene.apache.org/core/3_6_1/api/core/org/apache/lucene/queryParser/QueryParser.html"
   [query]
   (->> (split query #"\s")
+       (remove str/blank?)
        (map #(str "+" % "*"))
        (join " ")))
 
 (defn actor-search
   "query will be passed as-is to Lucene"
   [db query]
-  (q '[:find ?e ?name
-       :in $ ?search
-       :where [(fulltext $ :actor/name ?search) [[?e ?name]]]]
-     db query))
+  (if (str/blank? query)
+    #{}
+    (q '[:find ?e ?name
+        :in $ ?search
+        :where [(fulltext $ :actor/name ?search) [[?e ?name]]]]
+      db query)))
 
 (defn actor-or-movie-name [db eid]
   (let [ent (d/entity db (e eid))]
