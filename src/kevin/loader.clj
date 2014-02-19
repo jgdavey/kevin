@@ -94,8 +94,8 @@
 (defn load-file-with-parser
   [file parser & {:keys [start-at]}]
   (with-open [in (io/reader
-                   (java.util.zip.GZIPInputStream.
-                     (io/input-stream file)))]
+                   (java.util.zip.GZIPInputStream. (io/input-stream file))
+                   :encoding "ISO-8859-1")]
       (let [lines (line-seq in)]
         (loop [[line & lines] lines
               state { :header true }]
