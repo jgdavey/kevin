@@ -1,6 +1,6 @@
 (ns kevin.loader
   "To use, download the movies, actors and actresses lists from a mirror on
-  http://www.imdb.com/interfaces, and copy them (still zipped) to the resources
+  http://www.imdb.com/interfaces, and copy them (still zipped) to the data
   folder. You can then run `lein run -m kevin.loader`"
   (:gen-class)
   (:require [clojure.java.io :as io]
@@ -107,9 +107,9 @@
   (let [system (system/start (system/system))]
     (alter-var-root #'conn (constantly (:conn (:db system))))
     (println "Loading movies...")
-    (load-file-with-parser "resources/movies.list.gz" parse-movies :start-at "MOVIES LIST")
+    (load-file-with-parser "data/movies.list.gz" parse-movies :start-at "MOVIES LIST")
     (println "Loading actors...")
-    (load-file-with-parser "resources/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
+    (load-file-with-parser "data/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
     (println "Loading actresses...")
-    (load-file-with-parser "resources/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
+    (load-file-with-parser "data/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
   ))
