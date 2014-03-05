@@ -8,8 +8,8 @@
             [ring.server.standalone :refer (serve)]
             [datomic.api :as d :refer (db q)]
             [kevin.system :as sys]
-            [kevin.search :refer :all]
-            [kevin.core :refer :all]))
+            [kevin.core :refer :all]
+            [kevin.search :refer :all]))
 
 (defonce system nil)
 
@@ -95,6 +95,16 @@
     (time (some (fn [n] (when (= kevin n) n)) tree)))
 
 
+  ;; bi-directional bfs
+  (def from-bfs
+    (let [d (-> system :db :conn db)
+          clay (actor-name->eid d "Barth, Clayton")
+          kevin (actor-name->eid d "Bacon, Kevin (I)")
+          neighbor-fn (partial neighbors d)
+          actor-name (partial actor-or-movie-name d)]
+      (time (bidirectional-bfs clay kevin neighbor-fn)))
+    )
+
   ;; queue-based search
   (let [d (-> system :db :conn db)
         clay (actor-name->eid d "Barth, Clayton")
@@ -129,16 +139,17 @@
                          d acted-with-rules clay kevin))))
 
   ;; using path from rule
-  (let [d (-> system :db :conn db)
-        clay (actor-name->eid d "Barth, Clayton")
-        kevin (actor-name->eid d "Bacon, Kevin (I)")
-        ename  (partial actor-or-movie-name d)]
-    (time (map (fn [[p]] (mapv ename p))
-                  (q '[:find (take 25 ?path)
-                       :in $ % ?actor ?target
-                       :where
-                       (acted-with-3 ?actor ?target ?path)
-                       ]
-                     d acted-with-rules clay kevin))))
+  (def from-path
+    (let [d (-> system :db :conn db)
+          clay (actor-name->eid d "Barth, Clayton")
+          kevin (actor-name->eid d "Bacon, Kevin (I)")
+          ename  (partial actor-or-movie-name d)]
+      (time (set (map (fn [[p]] (concat p (list kevin)))
+                    (q '[:find ?path
+                        :in $ % ?actor ?target
+                        :where
+                        (acted-with-3 ?actor ?target ?path)]
+                      d acted-with-rules clay kevin)))))
+    )
 
 )

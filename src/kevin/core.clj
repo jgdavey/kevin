@@ -96,6 +96,13 @@
   (->> (actor-movies db eid)
       (mapcat (partial referring-to db))))
 
+(defn neighbors
+  "d is database value
+  eid is an actor or movie eid"
+  [db eid]
+  (or (seq (actor-movies db eid))
+      (seq (referring-to db eid))))
+
 (defn zipper
   "db is database value
   eid is actor's entity id"
