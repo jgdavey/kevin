@@ -29,7 +29,7 @@
 
 (defn results [db search]
   (let [[result1 result2] search
-        paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2) :limit 25)
+        paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2) :limit 50)
         bacon-number (int (/ (-> paths first count) 2))]
     (layout/common
       (if (seq paths)
