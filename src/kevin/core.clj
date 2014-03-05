@@ -100,8 +100,8 @@
   "d is database value
   eid is an actor or movie eid"
   [db eid]
-  (or (seq (actor-movies db eid))
-      (seq (referring-to db eid))))
+  (or (seq (actor-movies db (e eid)))
+      (seq (referring-to db (e eid)))))
 
 (defn zipper
   "db is database value

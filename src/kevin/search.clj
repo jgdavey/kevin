@@ -82,10 +82,17 @@
                [(list rule '?actor '?target '?path)])
       db acted-with-rules source target)))
 
-(defn find-paths [db source target]
-  (let [depth (partial path-at-depth db source target)
-        ename (partial actor-or-movie-name db)]
-    (map (fn [[p]] (mapv ename (conj (vec p) target)))
-         (or (seq (depth 1))
-             (seq (depth 2))
-             (seq (depth 3))))))
+(defn find-id-paths [db source target]
+  (bidirectional-bfs source target (partial neighbors db)))
+
+(defn find-annotated-paths
+  [db source target & {:keys [limit] :or {limit 1000}}]
+  (let [ename (partial actor-or-movie-name db)
+        annotate-node (fn [node]
+                        (let [ent (d/entity db node)]
+                          {:type (if (:actor/name ent) "actor" "movie")
+                           :name (ename ent)
+                           :entity ent}))]
+    (->> (find-id-paths db source target)
+         (map (partial mapv annotate-node))
+         (take limit))))

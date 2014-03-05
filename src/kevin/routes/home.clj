@@ -29,14 +29,17 @@
 
 (defn results [db search]
   (let [[result1 result2] search
-        paths (s/find-paths db (:actor-id result1) (:actor-id result2))
+        paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2) :limit 25)
         bacon-number (int (/ (-> paths first count) 2))]
     (layout/common
-      [:h2 "Results"]
-      [:p "Bacon Number: " [:strong bacon-number]]
-      (for [path (take 25 paths)]
-        [:ul
-         (for [node path] [:li node])]))))
+      (if (seq paths)
+        [:div#results
+         [:h2 "Results"]
+         [:p "Bacon Number: " [:strong bacon-number]]
+         (for [path paths]
+           [:ul
+            (for [node path] [:li {:class (:type node)} (:name node)])])]
+        [:p "Not linkable in 5 hops or fewer"]))))
 
 (defn disambiguate [search]
   (let [[result1 result2] search]
@@ -59,5 +62,6 @@
 
 (defn home-routes [context]
   (routes
+    (HEAD "/" [] "") ;; heartbeat response
     (GET "/" [] (home))
     (GET "/search" {params :params} (search context params))))
