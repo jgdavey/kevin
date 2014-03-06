@@ -1,0 +1,27 @@
+/target
+/classes
+/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+/.lein-*
+/.nrepl-port
+/resources/*.list.gz
+config/*.properties
+data
+/.bundle
+/build
+.sass-cache
+.cache
+.DS_Store
+.gem
+
+# Ignore all clojure stuff
+*.clj
+*.edn
+/src
+/test
+/doc
+/resources
+/LICENSE
