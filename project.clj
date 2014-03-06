@@ -24,5 +24,5 @@
                                   [org.clojure/java.classpath "0.2.2"]
                                   [javax.servlet/servlet-api "2.5"]
                                   [ring-mock "0.1.5"]]}}
-  :jvm-opts ["-Xmx1g" "-server"]
+  :jvm-opts ["-Xmx4g" "-server"]
   )
