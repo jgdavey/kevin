@@ -29,6 +29,10 @@
     [(acted-with-3 ?e1 ?e2 ?path)
      (acted-with-2 ?e1 ?x ?p1)
      (acted-with ?x ?e2 ?p2)
+     [(concat ?p1 ?p2) ?path]]
+    [(acted-with-4 ?e1 ?e2 ?path)
+     (acted-with-3 ?e1 ?x ?p1)
+     (acted-with ?x ?e2 ?p2)
      [(concat ?p1 ?p2) ?path]]])
 
 (defn format-query
