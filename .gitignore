@@ -10,4 +10,9 @@ pom.xml.asc
 /resources/*.list.gz
 config/*.properties
 data
-.lein-env
+/.bundle
+/build
+.sass-cache
+.cache
+.DS_Store
+.gem
