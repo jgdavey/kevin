@@ -9,7 +9,10 @@
                  [environ "0.4.0"]
                  [ring-server "0.3.1"]
                  [compojure "1.1.6"]]
-  :plugins [[lein-ring "0.8.10"]]
+  :plugins [[lein-ring "0.8.10"]
+            [lein-beanstalk "0.2.7"]]
+  :aws {:access-key ~(System/getenv "AWS_ACCESS_KEY_ID")
+        :secret-key ~(System/getenv "AWS_SECRET_KEY") }
   :ring {:handler kevin.system/handler
          :init kevin.system/init
          :destroy kevin.system/destroy }
