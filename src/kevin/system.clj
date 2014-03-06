@@ -1,6 +1,7 @@
 (ns kevin.system
   (:require [datomic.api :as d]
             [kevin.handler :as handler]
+            [environ.core :refer [env]]
             [ring.server.standalone :refer (serve)]))
 
 (defn- ensure-schema [conn]
@@ -36,8 +37,8 @@
 (defn system
   "Returns a new instance of the whole application."
   []
-  {:db {:uri "datomic:sql://movies?jdbc:postgresql://localhost:5432/datomic?user=datomic&password=datomic"}
-   :web {:port 8080 :open-browser? false}})
+  {:db {:uri (env :datomic-db-url)}
+   :web {:open-browser? false}})
 
 (defn start
   "Performs side effects to initialize the system, acquire resources,

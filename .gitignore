@@ -10,3 +10,4 @@ pom.xml.asc
 /resources/*.list.gz
 config/*.properties
 data
+.lein-env

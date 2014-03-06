@@ -1,0 +1,1 @@
+{:datomic-db-url "datomic:sql://movies?jdbc:postgresql://localhost:5432/datomic?user=datomic&password=datomic"}
