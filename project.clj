@@ -26,7 +26,3 @@
                                   [ring-mock "0.1.5"]]}}
   :jvm-opts ["-Xmx4g" "-server"]
   )
-
-(let [a "a"
-      b (str a "b")]
-  (println b))

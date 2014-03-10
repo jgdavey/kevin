@@ -13,8 +13,8 @@ How far is an actor from Kevin Bacon?
 6. Start a repl with `lein repl`
 7. Within the repl, run `(go)`
 
-You can now visit http://localhost:3000 to see the web app.
-You also now have an empty datomic database.
+You can now visit http://localhost:3000 to see the web app. You also now have an
+empty datomic database.
 
 ## Import
 
