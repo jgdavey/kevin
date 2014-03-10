@@ -14,7 +14,7 @@
     (ensure-schema conn)
     conn))
 
-(defn- start-db [system]
+(defn start-db [system]
   (let [db (:db system)
         conn (ensure-db (:uri db))]
     (assoc-in system [:db :conn] conn)))

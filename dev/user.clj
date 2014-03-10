@@ -8,6 +8,7 @@
             [ring.server.standalone :refer (serve)]
             [datomic.api :as d :refer (db q)]
             [kevin.system :as sys]
+            [kevin.expunge]
             [kevin.core :refer :all]
             [kevin.search :refer :all]))
 
@@ -151,5 +152,18 @@
                         (acted-with-3 ?actor ?target ?path)]
                       d acted-with-rules clay kevin)))))
     )
+
+
+  (let [d (-> system :db :conn db)
+        reducer (fn [map [k v]] (assoc map k (conj (get map k []) v)))
+        tx-fn (fn [[name movies]]
+                {:db/id (d/tempid :db.part/user)
+                 :actor/name name
+                 :movies (mapv (fn [m] {:db/id (d/tempid :db.part/user)
+                                       :movie/title m}) movies)})
+        tx-data (->> (kevin.expunge/actor-names "data/movies-small.list" d)
+                     (reduce reducer {})
+                     (map tx-fn))]
+      (spit "resources/sample.edn" (with-out-str (pr tx-data))))
 
 )
