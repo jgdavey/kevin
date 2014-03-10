@@ -4,7 +4,6 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [com.datomic/datomic-pro "0.9.4556"]
                  [hiccup "1.0.5"]
                  [environ "0.4.0"]
                  [ring-server "0.3.1"]
@@ -17,12 +16,17 @@
          :init kevin.system/init
          :destroy kevin.system/destroy }
   :profiles {:production
-             {:ring
-              {:open-browser? false :stacktraces? false :auto-reload? false}}
+             {:ring {:open-browser? false :stacktraces? false :auto-reload? false}
+              :dependencies [[com.datomic/datomic-pro "0.9.4578"]]}
              :dev {:source-paths ["dev"]
-                   :dependencies [[org.clojure/tools.namespace "0.2.4"]
+                   :dependencies [[com.datomic/datomic-free "0.9.4578"]
+                                  [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.2"]
                                   [javax.servlet/servlet-api "2.5"]
                                   [ring-mock "0.1.5"]]}}
   :jvm-opts ["-Xmx4g" "-server"]
   )
+
+(let [a "a"
+      b (str a "b")]
+  (println b))
