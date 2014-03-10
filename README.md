@@ -16,3 +16,10 @@ How far is an actor from Kevin Bacon?
 You can now visit http://localhost:3000 to see the web app.
 You also now have an empty datomic database.
 
+## Import
+
+1. After you've run `(go)` in a repl, run the following:
+
+	(->> (slurp "resources/sample.edn")
+	     read-string
+	     (d/transact (-> system :db :conn)))
