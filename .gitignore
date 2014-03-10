@@ -17,3 +17,4 @@ data
 .DS_Store
 .gem
 /source
+dev/transactor.properties
