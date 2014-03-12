@@ -103,16 +103,15 @@
           kevin (actor-name->eid d "Bacon, Kevin (I)")
           neighbor-fn (partial neighbors d)
           actor-name (partial actor-or-movie-name d)]
-      (time (bidirectional-bfs clay kevin neighbor-fn)))
-    )
+      (time (bidirectional-bfs clay kevin neighbor-fn))))
 
   ;; queue-based search
   (let [d (-> system :db :conn db)
         clay (actor-name->eid d "Barth, Clayton")
         kevin (actor-name->eid d "Bacon, Kevin (I)")
-        neighbor-fn (partial immediate-connections d)
-        actor-name (partial eid->actor-name d)]
-    (time (map actor-name ((searcher clay neighbor-fn) kevin))))
+        neighbor-fn (partial neighbors d)
+        actor-name (partial actor-or-movie-name d)]
+    (time (map actor-name (bfs clay kevin neighbor-fn))))
 
 
   ;; query engine search (3 degrees)

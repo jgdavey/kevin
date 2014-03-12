@@ -116,26 +116,6 @@
         make-node (fn [_ c] c)]
     (zip/zipper branch? children make-node eid)))
 
-(defn searcher [root neighbor-fn]
-  (fn [target]
-    (let [queue (conj clojure.lang.PersistentQueue/EMPTY [root])
-          visited #{root}
-          target-neighbors (neighbor-fn target)
-          found? (fn [n] (some #{n} target-neighbors))]
-      (loop [q queue
-             v visited
-             i 0]
-        (when (seq q)
-          (let [path (peek q)
-                node (last path)]
-            (if (found? node)
-              (do
-                (println "Finished in " i " iterations")
-                (conj path target))
-              (let [neighbors (remove v (neighbor-fn node))
-                    paths (map (partial conj path) neighbors)]
-                (recur (into (pop q) paths) (into v neighbors) (inc i))))))))))
-
 (defn name-or-search [db person]
   (let [actor (actor-name->eid db person)
         result {:name person :actor-id actor}]

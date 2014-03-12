@@ -1,5 +1,26 @@
 (ns kevin.search)
 
+(defn bfs
+  "bread-first search, one-directional"
+  [start end neighbor-fn]
+  (let [queue (conj clojure.lang.PersistentQueue/EMPTY [start])
+        visited #{start}
+        end-neighbors (neighbor-fn end)
+        found? (fn [n] (some #{n} end-neighbors))]
+    (loop [q queue
+           v visited
+           i 0]
+      (when (seq q)
+        (let [path (peek q)
+              node (last path)]
+          (if (found? node)
+            (do
+              (println "Finished in " i " iterations")
+              (conj path end))
+            (let [neighbors (remove v (neighbor-fn node))
+                  paths (map (partial conj path) neighbors)]
+              (recur (into (pop q) paths) (into v neighbors) (inc i)))))))))
+
 (let [add (fnil conj #{})]
   (defn- add-reducer
     ([] {})
