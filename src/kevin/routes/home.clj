@@ -5,9 +5,8 @@
             [hiccup.element :refer [link-to]]
             [clojure.string :as str]
             [datomic.api :as d]
-            [kevin.core]
-            [kevin.views.layout :as layout]
-            [kevin.search :as s]))
+            [kevin.core :as s]
+            [kevin.views.layout :as layout]))
 
 (defn form [person1 person2]
   (form-to [:get "search"]

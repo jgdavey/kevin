@@ -1,8 +1,8 @@
 (ns kevin.core
   (:require [datomic.api :as d :refer [q db]]
             [clojure.string :refer [split join] :as str]
-            [clojure.set :refer [union difference]]
-            [clojure.zip :as zip]))
+            [clojure.zip :as zip]
+            [kevin.search :refer [bidirectional-bfs]]))
 
 (defprotocol Eid
   (e [_]))
@@ -135,3 +135,41 @@
               (let [neighbors (remove v (neighbor-fn node))
                     paths (map (partial conj path) neighbors)]
                 (recur (into (pop q) paths) (into v neighbors) (inc i))))))))))
+
+(defn name-or-search [db person]
+  (let [actor (actor-name->eid db person)
+        result {:name person :actor-id actor}]
+    (assoc result :names
+           (cond
+             (not person) (list)
+             actor (list person)
+             :else (->> person
+                        format-query
+                        (actor-search db)
+                        (map last))))))
+
+(defn search [db & people]
+  (mapv (partial name-or-search db) people))
+
+(defn path-at-depth [db source target depth]
+  (let [rule (symbol (str "acted-with-" depth))]
+    (q (concat '[:find ?path
+                 :in $ % ?actor ?target
+                 :where]
+               [(list rule '?actor '?target '?path)])
+      db acted-with-rules source target)))
+
+(defn find-id-paths [db source target]
+  (bidirectional-bfs source target (partial neighbors db)))
+
+(defn find-annotated-paths
+  [db source target & {:keys [limit] :or {limit 1000}}]
+  (let [ename (partial actor-or-movie-name db)
+        annotate-node (fn [node]
+                        (let [ent (d/entity db node)]
+                          {:type (if (:actor/name ent) "actor" "movie")
+                           :name (ename ent)
+                           :entity ent}))]
+    (->> (find-id-paths db source target)
+         (map (partial mapv annotate-node))
+         (take limit))))

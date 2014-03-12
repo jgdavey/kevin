@@ -1,21 +1,4 @@
-(ns kevin.search
-  (:require [datomic.api :as d :refer [q]]
-            [kevin.core :refer :all]))
-
-(defn name-or-search [db person]
-  (let [actor (actor-name->eid db person)
-        result {:name person :actor-id actor}]
-    (assoc result :names
-           (cond
-             (not person) (list)
-             actor (list person)
-             :else (->> person
-                        format-query
-                        (actor-search db)
-                        (map last))))))
-
-(defn search [db & people]
-  (mapv (partial name-or-search db) people))
+(ns kevin.search)
 
 (let [add (fnil conj #{})]
   (defn- add-reducer
@@ -75,26 +58,3 @@
           (if-let [all (seq (filter #(contains? preds %) q2))]
             (find-paths preds succs all)
             (recur preds succs q1 q2 (inc iter))))))))
-
-(defn path-at-depth [db source target depth]
-  (let [rule (symbol (str "acted-with-" depth))]
-    (q (concat '[:find ?path
-                 :in $ % ?actor ?target
-                 :where]
-               [(list rule '?actor '?target '?path)])
-      db acted-with-rules source target)))
-
-(defn find-id-paths [db source target]
-  (bidirectional-bfs source target (partial neighbors db)))
-
-(defn find-annotated-paths
-  [db source target & {:keys [limit] :or {limit 1000}}]
-  (let [ename (partial actor-or-movie-name db)
-        annotate-node (fn [node]
-                        (let [ent (d/entity db node)]
-                          {:type (if (:actor/name ent) "actor" "movie")
-                           :name (ename ent)
-                           :entity ent}))]
-    (->> (find-id-paths db source target)
-         (map (partial mapv annotate-node))
-         (take limit))))
