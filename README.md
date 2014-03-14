@@ -18,8 +18,6 @@ empty datomic database.
 
 ## Import
 
-1. After you've run `(go)` in a repl, run the following:
+1. At a REPL, after you've run `(go)`, run the following:
 
-	(->> (slurp "resources/sample.edn")
-	     read-string
-	     (d/transact (-> system :db :conn)))
+        (import-sample-data)

@@ -51,6 +51,23 @@
   (stop)
   (refresh :after 'user/go))
 
+(defn import-sample-data
+  "Transacts the sample data from `resources/sample.edn` into current
+  system's database connection. Assumes top-level system var has an active
+  database connection."
+  []
+  { :pre (:conn (:db system)) }
+  (let [conn (-> system :db :conn)
+        actors (read-string (slurp "resources/sample.edn"))
+        tx-fn (fn [[name movies]]
+                {:db/id (d/tempid :db.part/user)
+                :actor/name name
+                :movies (mapv (fn [m] {:db/id (d/tempid :db.part/user)
+                                      :movie/title m}) movies)})]
+
+    @(d/transact conn (map tx-fn actors))
+    :ok))
+
 (comment
 
   (reset)
@@ -153,16 +170,10 @@
     )
 
 
+  ;; export movies and actors
   (let [d (-> system :db :conn db)
         reducer (fn [map [k v]] (assoc map k (conj (get map k []) v)))
-        tx-fn (fn [[name movies]]
-                {:db/id (d/tempid :db.part/user)
-                 :actor/name name
-                 :movies (mapv (fn [m] {:db/id (d/tempid :db.part/user)
-                                       :movie/title m}) movies)})
-        tx-data (->> (kevin.expunge/actor-names "data/movies-small.list" d)
-                     (reduce reducer {})
-                     (map tx-fn))]
-      (spit "resources/sample.edn" (with-out-str (pr tx-data))))
-
+        actor-map (->> (kevin.expunge/actor-names "data/movies-small.list" d)
+                     (reduce reducer {}))]
+      (spit "resources/sample.edn" (with-out-str (pr actor-map))))
 )
