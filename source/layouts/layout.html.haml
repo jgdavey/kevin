@@ -1,0 +1,11 @@
+!!!
+%html
+  %head
+    %meta{charset: "utf-8"}/
+    %meta{content: "IE=edge,chrome=1", "http-equiv" => "X-UA-Compatible"}/
+    %title= current_page.data.title || "Kevin Bacon"
+    = stylesheet_link_tag "styles"
+    = javascript_include_tag  "all"
+  %body{class: page_classes}
+    #container
+      = yield
