@@ -48,9 +48,9 @@
       (let [actor-id  (d/tempid :db.part/user)
             movie-txs (map (fn [m] {:movie/title m
                                 :db/id (d/tempid :db.part/user)
-                                :_movies actor-id
+                                :actor/_movies actor-id
                                 }) movies)
-            actor-tx  { :db/id actor-id, :actor/name actor }]
+            actor-tx  { :db/id actor-id, :person/name actor }]
       (concat [actor-tx] movie-txs)))))
 
 (defn parse-movies [lines]

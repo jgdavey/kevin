@@ -5,7 +5,7 @@
             [ring.server.standalone :refer (serve)]))
 
 (defn- ensure-schema [conn]
-  (or (-> conn d/db (d/entid :actor/name))
+  (or (-> conn d/db (d/entid :person/name))
       @(d/transact conn (read-string (slurp "resources/schema.edn")))))
 
 (defn- ensure-db [db-uri]

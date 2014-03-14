@@ -61,9 +61,9 @@
         actors (read-string (slurp "resources/sample.edn"))
         tx-fn (fn [[name movies]]
                 {:db/id (d/tempid :db.part/user)
-                :actor/name name
-                :movies (mapv (fn [m] {:db/id (d/tempid :db.part/user)
-                                      :movie/title m}) movies)})]
+                :person/name name
+                :actor/movies (mapv (fn [m] {:db/id (d/tempid :db.part/user)
+                                             :movie/title m}) movies)})]
 
     @(d/transact conn (map tx-fn actors))
     :ok))
@@ -82,7 +82,7 @@
       (q '[:find (count ?e)
            :where
            [?e :movie/title]
-           [_ :movies ?e]]
+           [_ :actor/movies ?e]]
          d)))
 
   ;; number of movies with no actors
@@ -90,7 +90,7 @@
     (let [d (-> system :db :conn db)
           movies (q '[:find ?e :where [?e :movie/title]] d)]
       (->> (map (fn [[id]] (d/entity d id)) movies)
-           (remove (fn [e] (:_movies e)))
+           (remove (fn [e] (:actor/_movies e)))
            count)))
 
   ;; retract video games

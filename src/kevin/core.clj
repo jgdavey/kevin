@@ -16,8 +16,8 @@
 
 (def acted-with-rules
   '[[(acted-with ?e1 ?e2 ?path)
-     [?e1 :movies ?m]
-     [?e2 :movies ?m]
+     [?e1 :actor/movies ?m]
+     [?e2 :actor/movies ?m]
      [(!= ?e1 ?e2)]
      [(vector ?e1 ?m) ?path]]
     [(acted-with-1 ?e1 ?e2 ?path)
@@ -56,12 +56,12 @@
     #{}
     (q '[:find ?e ?name
         :in $ ?search
-        :where [(fulltext $ :actor/name ?search) [[?e ?name]]]]
+        :where [(fulltext $ :person/name ?search) [[?e ?name]]]]
       db query)))
 
 (defn actor-or-movie-name [db eid]
   (let [ent (d/entity db (e eid))]
-    (or (:movie/title ent) (:actor/name ent))))
+    (or (:movie/title ent) (:person/name ent))))
 
 (defn referring-to
   "Find all entities referring to an eid as a certain attribute."
@@ -79,7 +79,7 @@
   "db is database value
   name is the actor's name"
   [db name]
-  (-> (eids-with-attr-val db :actor/name name)
+  (-> (eids-with-attr-val db :person/name name)
     first))
 
 (defn eid->actor-name
@@ -87,11 +87,11 @@
   name is the actor's name"
   [db eid]
   (-> (d/entity db (e eid))
-      :actor/name))
+      :person/name))
 
 (defn actor-movies
   [db eid]
-  (map :v (d/datoms db :eavt eid :movies)))
+  (map :v (d/datoms db :eavt eid :actor/movies)))
 
 (defn immediate-connections
   "d is database value
@@ -147,7 +147,7 @@
   (let [ename (partial actor-or-movie-name db)
         annotate-node (fn [node]
                         (let [ent (d/entity db node)]
-                          {:type (if (:actor/name ent) "actor" "movie")
+                          {:type (if (:person/name ent) "actor" "movie")
                            :name (ename ent)
                            :entity ent}))]
     (->> (find-id-paths db source target)

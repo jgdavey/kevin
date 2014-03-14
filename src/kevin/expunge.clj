@@ -18,7 +18,7 @@
     (q '[:find ?name ?title
          :in $ [?title ...]
          :where [?m :movie/title ?title]
-         [?a :movies ?m]
-         [?a :actor/name ?name]]
+         [?a :actor/movies ?m]
+         [?a :person/name ?name]]
       db titles)))
 
