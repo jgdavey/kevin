@@ -20,6 +20,22 @@
     (when (not= tab -1)
       (.. line (substring 0 tab) trim))))
 
+(defn extract-year [movie-title]
+  (Integer. (last (re-find #"\((\d\d\d\d).*\)$" movie-title))))
+
+(defn add-year [title]
+  {:db/id [:movie/title title]
+   :movie/year (extract-year title)})
+
+(defn add-years-to-movies [conn]
+  (->> (q '[:find ?t
+       :where [?e :movie/title ?t]]
+         (db conn))
+      (map first)
+      (map add-year)
+      (d/transact conn)
+       deref))
+
 (defn movie-line? [line]
   (and
     (not (empty? line))

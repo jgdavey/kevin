@@ -66,6 +66,7 @@
                                              :movie/title m}) movies)})]
 
     @(d/transact conn (map tx-fn actors))
+    (kevin.loader/add-years-to-movies conn)
     :ok))
 
 (comment
