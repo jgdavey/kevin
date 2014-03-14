@@ -1,10 +1,45 @@
+// Tantek Celik's Whitespace Reset
+//      Author:   Tantek Celik, Shane Riley
+//     Version:   (CC) 2010 Some Rights Reserved - http://creativecommons.org/licenses/by/2.0
+// Description: Resets default styling of common browsers to a common base
+
+ul,ol
+  list-style: none
+h1,h2,h3,h4,h5,h6,pre,code
+  font-size: 1em
+ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,body,html,p,blockquote,fieldset,input,dl,dt,dd, figure, figcaption
+  margin: 0
+  padding: 0
+a img,:link img,:visited img, fieldset
+  border: none
+address
+  font-style: normal
+header, section, article, nav, footer, hgroup, details, summary, figure, main
+  display: block
+mark
+  color: inherit
+  background: transparent
+abbr
+  border: none
+summary::-webkit-details-marker
+  display: none
+
 body
   color: #555
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif
   font-size: 13px
+  background: #faf6ef
 
-h1
+h1, h2
   text-align: center
+  font-family: "Changa One", Helvetica, Arial, sans-serif
+  text-transform: uppercase
+  font-size: 100px
+  color: #dd4624
+  margin: 50px 0
+
+h2
+  font-size: 40px
 
 #container
   width: 900px
@@ -31,31 +66,49 @@ form input[type=submit]
   cursor: pointer
 
 #results
-  ul
-    list-style: none
-    overflow: hidden
-    padding: 8px 0
-    margin: 0
-    clear: both
-    &:hover
-      background-color: #fffafa
-  li
-    float: left
-    height: 15px
-    padding: 5px 0
-    line-height: 15px
-    &:before
-      content: "⇔"
-      color: #999
-      font-size: 15px
-      line-height: 13px
-      font-weight: normal
-      padding: 0 12px
-      float: left
-    &:nth-of-type(1):before
-      padding: 0
-      content: ""
-    &.movie
-      font-weight: bold
-    &.actor
-      font-weight: normal
+  h3
+    position: relative
+    font-family: "Changa One", Helvetica, Arial, sans-serif
+    text-align: center
+    display: block
+    margin: 0 auto
+    width: 200px
+    height: 200px
+    line-height: 190px
+    background: #dd4624
+    color: #fff
+    font-size: 100px
+    border-radius: 200px
+    z-index: 2
+  .result_list
+    position: relative
+    padding: 100px
+    background: transparentize(#fff, .1)
+    border-radius: 100px
+    z-index: 1
+    box-shadow: inset 0 0 40px darken(desaturate(#faf6ef, 30%), 20%)
+    border-top: 2px solid darken(desaturate(#faf6ef, 30%), 20%)
+    border-bottom: 2px solid #fff
+    margin: -50px 0 50px 0
+    ul
+      margin: 0 0 40px 0
+      li
+        + li
+          padding-left: 20px
+    li
+      padding: 5px 0
+      &:before
+        content: "⇔"
+        color: #999
+        font-size: 15px
+        line-height: 13px
+        font-weight: normal
+        padding: 0 12px
+        float: left
+      &:nth-of-type(1):before
+        padding: 0
+        content: ""
+      &.movie
+        font-weight: bold
+      &.actor
+        font-weight: normal

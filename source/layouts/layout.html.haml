@@ -6,6 +6,8 @@
     %title= current_page.data.title || "Kevin Bacon"
     = stylesheet_link_tag "styles"
     = javascript_include_tag  "all"
+    %link(href='http://fonts.googleapis.com/css?family=Changa+One' rel='stylesheet' type='text/css')
   %body{class: page_classes}
     #container
+      %h1 Kevin Bacon
       = yield

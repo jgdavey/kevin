@@ -1,14 +1,12 @@
 - name = Phil.name
 
-%h1 Kevin Bacon
 #results
-  %h2 Results
-  %p
-    Bacon Number:
-    %strong 2
-  - Phil.loop(1..50) do
-    %ul
-      - Phil.loop(1..5) do
-        %li.actor= name
-        %li.movie #{Phil.words(1..5).capitalize} #{1914 + Phil.pick(100)}
-      %li.actor Kevin Bacon
+  %h2 Bacon Number:
+  %h3= Phil.pick 1..99
+  .result_list
+    - Phil.loop(1..50) do
+      %ul
+        - Phil.loop(1..5) do
+          %li.actor= name
+          %li.movie #{Phil.words(1..5).capitalize} #{1914 + Phil.pick(100)}
+        %li.actor Kevin Bacon
