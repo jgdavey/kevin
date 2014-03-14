@@ -1,23 +1,8 @@
 %h1 Kevin Bacon
 %h2 Did you mean one of the below?
-%p
-  %a{href: "/search?person1=Parker%2C+Mary+%28IV%29&person2=Bacon%2C+Kevin+%28I%29"}
-    Parker, Mary (IV) -> Bacon, Kevin (I)
-%p
-  %a{href: "/search?person1=Parker%2C+Mary+%28II%29&person2=Bacon%2C+Kevin+%28I%29"}
-    Parker, Mary (II) -> Bacon, Kevin (I)
-%p
-  %a{href: "/search?person1=Parker%2C+Mary-Louise&person2=Bacon%2C+Kevin+%28I%29"}
-    Parker, Mary-Louise -> Bacon, Kevin (I)
-%p
-  %a{href: "/search?person1=Parker%2C+Mary+Anne&person2=Bacon%2C+Kevin+%28I%29"}
-    Parker, Mary Anne -> Bacon, Kevin (I)
-%p
-  %a{href: "/search?person1=Parker%2C+Mary+%28I%29&person2=Bacon%2C+Kevin+%28I%29"}
-    Parker, Mary (I) -> Bacon, Kevin (I)
-%p
-  %a{href: "/search?person1=Williams%2C+Mary+Parker&person2=Bacon%2C+Kevin+%28I%29"}
-    Williams, Mary Parker -> Bacon, Kevin (I)
+- Phil.loop(1..10) do
+  %p= link_to "#{Phil.name} -> #{Phil.name}"
+
 %form{action: "search", method: "get"}
   %h2 Search
   %fieldset
