@@ -11,7 +11,7 @@
 
  {:db/id #db/id[:db.part/db]
   :db/ident :movie/year
-  :db/valueType :db.type/string
+  :db/valueType :db.type/long
   :db/cardinality :db.cardinality/one
   :db/doc "A movie's release year"
   :db.install/_attribute :db.part/db}
