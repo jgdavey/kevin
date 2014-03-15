@@ -54,7 +54,11 @@
     (filter remove-sep (partition-by pred coll))))
 
 (defn store-movies [batch]
-  (let [titles (map (fn [b] { :db/id (d/tempid :db.part/user) :movie/title b }) batch)]
+  (let [titles (map (fn [b]
+                      {:db/id (d/tempid :db.part/user)
+                       :movie/title b
+                       :movie/year (extract-year b)})
+                    batch)]
     @(d/transact conn titles)))
 
 (defn actor-tx-data
