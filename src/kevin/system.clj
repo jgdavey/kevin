@@ -6,7 +6,9 @@
 
 (defn- ensure-schema [conn]
   (or (-> conn d/db (d/entid :person/name))
-      @(d/transact conn (read-string (slurp "resources/schema.edn")))))
+      @(d/transact conn (read-string (slurp "resources/schema.edn"))))
+  (or (-> conn d/db (d/entid :movie/genre))
+      @(d/transact conn (read-string (slurp "resources/genres.edn")))))
 
 (defn- ensure-db [db-uri]
   (let [newdb? (d/create-database db-uri)

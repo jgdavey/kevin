@@ -142,6 +142,13 @@
 (defn find-id-paths [db source target]
   (bidirectional-bfs source target (partial neighbors db)))
 
+(defn has-documentaries?
+  [entities]
+  (->> entities
+       (map (comp :movie/genre :entity))
+       (filter identity)
+       (some :movie.genre/documentary)))
+
 (defn find-annotated-paths
   [db source target & {:keys [limit] :or {limit 1000}}]
   (let [ename (partial actor-or-movie-name db)
@@ -152,4 +159,5 @@
                            :entity ent}))]
     (->> (find-id-paths db source target)
          (map (partial mapv annotate-node))
+         (remove has-documentaries?)
          (take limit))))

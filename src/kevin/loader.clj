@@ -5,7 +5,7 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [datomic.api :as d :refer [q db]]
-            [kevin.core :refer [actor-name->eid]]
+            [kevin.core :refer [actor-name->eid eids-with-attr-val]]
             [kevin.system :as system]))
 
 (def conn nil)
@@ -15,28 +15,55 @@
 (def char-quote "\"")
 (def char-tab "\t")
 
-(defn movie-title [line]
+(def genres
+  {"Action"      :movie.genre/action
+   "Adult"       :movie.genre/adult
+   "Adventure"   :movie.genre/adventure
+   "Animation"   :movie.genre/animation
+   "Comedy"      :movie.genre/comedy
+   "Crime"       :movie.genre/crime
+   "Documentary" :movie.genre/documentary
+   "Drama"       :movie.genre/drama
+   "Family"      :movie.genre/family
+   "Fantasy"     :movie.genre/fantasy
+   "Film-Noir"   :movie.genre/film-noir
+   "Horror"      :movie.genre/horror
+   "Musical"     :movie.genre/musical
+   "Mystery"     :movie.genre/mystery
+   "Romance"     :movie.genre/romance
+   "Sci-Fi"      :movie.genre/sci-fi
+   "Short"       :movie.genre/short
+   "Thriller"    :movie.genre/thriller
+   "War"         :movie.genre/war
+   "Western"     :movie.genre/western})
+
+(defn movie-title [^String line]
   (let [tab (. line (indexOf "\t"))]
     (when (not= tab -1)
       (.. line (substring 0 tab) trim))))
 
-(defn extract-year [movie-title]
-  (Integer. (last (re-find #"\((\d\d\d\d).*\)$" movie-title))))
+(defn extract-year [^String movie-title]
+  (if-let [year (last (re-find #"\((\d\d\d\d).*\)$" movie-title))]
+    (Integer. year)))
 
 (defn add-year [title]
-  {:db/id [:movie/title title]
-   :movie/year (extract-year title)})
+  (if-let [year (extract-year title)]
+    {:db/id [:movie/title title] :movie/year year}))
 
 (defn add-years-to-movies [conn]
-  (->> (q '[:find ?t
-       :where [?e :movie/title ?t]]
-         (db conn))
-      (map first)
-      (map add-year)
-      (d/transact conn)
-       deref))
+  (let [tx-data (->> (q '[:find ?t
+                          :where [?e :movie/title ?t]]
+                        (db conn))
+                     (map first)
+                     (map add-year)
+                     (filter identity))]
+    (doseq [batch (partition-all *batch-size* tx-data)]
+      (print ".")
+      (flush)
+      @(d/transact conn batch))
+    :ok))
 
-(defn movie-line? [line]
+(defn movie-line? [^String line]
   (and
     (not (empty? line))
     (not (.startsWith line char-quote))    ; Not a TV series
@@ -44,7 +71,7 @@
     (= -1 (.indexOf line "(VG)"))          ; Not a videogame
     (= -1 (.indexOf line "V)"))))          ; Not TV movie or straight to video
 
-(defn role-line? [line]
+(defn role-line? [^String line]
   (and
     (movie-line? line)
     (not= -1 (.indexOf line ")")) ))
@@ -72,6 +99,22 @@
                                 }) movies)
             actor-tx  { :db/id actor-id, :person/name actor }]
       (concat [actor-tx] movie-txs)))))
+
+(defn parse-genre [db ^String line]
+  (let [[title genre] (map #(.trim %) (clojure.string/split line #"\t+"))]
+    (when-let [g (genres genre)]
+      {:db/id (d/tempid :db.part/user)
+       :movie/title title
+       :movie/genre g})))
+
+(defn parse-genres [lines]
+  (let [db (db conn)
+        tx-data (filter identity (map (partial parse-genre db) (filter movie-line? lines)))]
+     (doseq [batch (partition-all *batch-size* tx-data)]
+       (print ".")
+       (flush)
+       @(d/transact-async conn (doall batch)))
+    :ok))
 
 (defn parse-movies [lines]
   (let [titles (filter identity (map movie-title (filter movie-line? lines)))]
@@ -132,4 +175,6 @@
     (load-file-with-parser "data/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
     (println "Loading actresses...")
     (load-file-with-parser "data/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
+    (println "Loading genres...")
+    (load-file-with-parser "data/genres.list.gz" parse-genres :start-at "8: THE GENRES LIST")
   ))

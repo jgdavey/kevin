@@ -1,0 +1,68 @@
+[
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie/genre
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "A movie's genres"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/action}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/adult}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/adventure}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/animation}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/comedy}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/crime}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/documentary}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/drama}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/family}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/fantasy}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/film-noir}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/horror}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/musical}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/mystery}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/romance}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/sci-fi}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/short}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/thriller}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/war}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :movie.genre/western}
+ ]
