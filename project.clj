@@ -1,4 +1,4 @@
-(defproject kevin "0.1.0-SNAPSHOT"
+(defproject kevin "0.1.1"
   :description "It's like Kevin Bacon is right here!"
   :url "http://imdb.com"
   :license {:name "Eclipse Public License"
