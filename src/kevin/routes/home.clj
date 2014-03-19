@@ -26,6 +26,16 @@
   (layout/common
     (form nil "Bacon, Kevin (I)")))
 
+(defn simple-escape [text]
+  (.. text (replace " " "+") (replace "&" "%26")))
+
+(defn- imdb-link [name type]
+  [:a {:href (str "http://imdb.com/find?exact="
+                  (= type "movie")
+                  "&q="
+                  (simple-escape name))}
+   name])
+
 (defn results [db search]
   (let [[result1 result2] search
         paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2) :limit 50)
@@ -37,7 +47,8 @@
          [:p "Bacon Number: " [:strong bacon-number]]
          (for [path paths]
            [:ul
-            (for [node path] [:li {:class (:type node)} (:name node)])])]
+            (for [node path] [:li {:class (:type node)}
+                              (imdb-link (:name node) (:type node))])])]
         [:p "Not linkable in 5 hops or fewer"]))))
 
 (defn disambiguate [search]
