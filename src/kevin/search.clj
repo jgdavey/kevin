@@ -21,15 +21,6 @@
                   paths (map (partial conj path) neighbors)]
               (recur (into (pop q) paths) (into v neighbors) (inc i)))))))))
 
-(let [add (fnil conj #{})]
-  (defn- add-reducer
-    ([] {})
-    ([map [key val]]
-     (update-in map [key] add val))))
-
-(defn- map-set-pairs [map pairs]
-  (reduce add-reducer map pairs))
-
 (defn paths
   "Returns a lazy seq of all non-looping path vectors starting with
   [<start-node>]"
@@ -45,37 +36,40 @@
   (remove #(m (peek %)) (paths m [start])))
 
 (defn- find-paths [from-map to-map matches]
-  (set (mapcat (fn [n]
-                 (let [froms (map reverse (trace-paths from-map n))
-                       tos (map rest (trace-paths to-map n))]
-                   (for [from froms
-                         to tos]
-                     (vec (concat from to))))) matches)))
+  (for [n matches
+        from (map reverse (trace-paths from-map n))
+        to (map rest (trace-paths to-map n))]
+    (vec (concat from to))))
+
+(defn- neighbor-pairs [neighbors q coll]
+  (for [node q
+        nbr (neighbors node)
+        :when (not (contains? coll nbr))]
+    [nbr node]))
 
 (defn bidirectional-bfs [start end neighbors]
-  (loop [preds {start nil}
-         succs {end nil}
-         q1 (list start)
-         q2 (list end)
-         iter 1]
-    (when (and (seq q1) (seq q2) (< iter 11)) ; 5 "hops" or fewer
-      (if (<= (count q1) (count q2))
-        (let [pairs (for [node q1
-                          nbr (neighbors node)
-                          :when (not (contains? preds nbr))]
-                      [nbr node])
-              preds (map-set-pairs preds pairs)
-              q1 (map first pairs)]
-          (if-let [all (seq (filter #(contains? succs %) q1))]
-            (find-paths preds succs all)
-            (recur preds succs q1 q2 (inc iter))))
-
-        (let [pairs (for [node q2
-                          nbr (neighbors node)
-                          :when (not (contains? succs nbr))]
-                      [nbr node])
-              succs (map-set-pairs succs pairs)
-              q2 (map first pairs)]
-          (if-let [all (seq (filter #(contains? preds %) q2))]
-            (find-paths preds succs all)
-            (recur preds succs q1 q2 (inc iter))))))))
+  (let [find-pairs (partial neighbor-pairs neighbors)
+        overlaps (fn [coll q] (seq (filter #(contains? coll %) q)))
+        map-set-pairs (fn [map pairs]
+                        (persistent! (reduce (fn [map [key val]]
+                                  (assoc! map key (conj (get map key #{}) val)))
+                                (transient map) pairs)))]
+    (loop [preds {start nil} ; map of outgoing nodes to where they came from
+           succs {end nil}   ; map of incoming nodes to where they came from
+           q1 (list start)   ; queue of outgoing things to check
+           q2 (list end)     ; queue of incoming things to check
+           iter 1]
+      (when (and (seq q1) (seq q2) (< iter 11)) ; 5 "hops" or fewer
+        (if (<= (count q1) (count q2))
+          (let [pairs (find-pairs q1 preds)
+                preds (map-set-pairs preds pairs)
+                q1 (map first pairs)]
+            (if-let [all (overlaps succs q1)]
+              (find-paths preds succs (set all))
+              (recur preds succs q1 q2 (inc iter))))
+          (let [pairs (find-pairs q2 succs)
+                succs (map-set-pairs succs pairs)
+                q2 (map first pairs)]
+            (if-let [all (overlaps preds q2)]
+              (find-paths preds succs (set all))
+              (recur preds succs q1 q2 (inc iter)))))))))

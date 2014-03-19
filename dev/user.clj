@@ -119,9 +119,9 @@
     (let [d (-> system :db :conn db)
           clay (actor-name->eid d "Barth, Clayton")
           kevin (actor-name->eid d "Bacon, Kevin (I)")
-          neighbor-fn (partial neighbors d)
-          actor-name (partial actor-or-movie-name d)]
-      (time (bidirectional-bfs clay kevin neighbor-fn))))
+          neighbor-fn (partial neighbors d)]
+      (time (bidirectional-bfs clay kevin neighbor-fn)))
+    )
 
   ;; queue-based search
   (let [d (-> system :db :conn db)
@@ -177,4 +177,13 @@
         actor-map (->> (kevin.expunge/actor-names "data/movies-small.list" d)
                      (reduce reducer {}))]
       (spit "resources/sample.edn" (with-out-str (pr actor-map))))
+
+
+;; quick n dirty profiling
+(let [d (-> system :db :conn db)
+      clay (actor-name->eid d "Barth, Clayton")
+      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      neighbor-fn (partial neighbors d)]
+  (time (dotimes [_ 50]
+          (bidirectional-bfs clay kevin neighbor-fn))))
 )
