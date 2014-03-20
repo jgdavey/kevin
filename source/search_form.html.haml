@@ -2,17 +2,16 @@
 title: Kevin
 ---
 
-%form{action: "search", method: "get"}
-  %h2 Calculate a Bacon Number
+%form
   %fieldset
     %dl
       %dt
-        %label{for: "person1"} Choose an actor
+        %label Choose an actor
       %dd
-        %input#person1{name: "person1", type: "text"}
+        %input(type='text')
       %dt
-        %label{for: "person2"} Choose another actor
+        %label Choose another actor
       %dd
-        %input#person2{name: "person2", type: "text", value: "Bacon, Kevin (I)"}
+        %input(type='text')
   %fieldset.actions
-    %input{type: "submit", value: "Search"}
+    %input(type='submit' value='calculate')

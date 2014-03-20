@@ -2,19 +2,10 @@
   %h2 Did you mean one of these?
   %ul
     - Phil.loop(1..10) do
-      %li= link_to "#{Phil.name} &rarr; #{Phil.name}".html_safe, "#"
-
-%form{action: "search", method: "get"}
-  %h2 Or you can try a new search, if you like
-  %fieldset
-    %dl
-      %dt
-        %label{for: "person1"} Choose an actor
-      %dd
-        %input#person1{name: "person1", type: "text"}
-      %dt
-        %label{for: "person2"} Choose another actor
-      %dd
-        %input#person2{name: "person2", type: "text", value: "Bacon, Kevin (I)"}
-  %fieldset.actions
-    %input{type: "submit", value: "Search"}
+      %li
+        = link_to "#" do
+          #{Phil.name}
+          %span &rarr;
+          #{Phil.name}
+%h2 Or you can try a new search, if you like
+= partial 'search_form'

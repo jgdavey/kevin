@@ -25,14 +25,32 @@ $red: #f92116
     text-shadow: 0 0 #{$size}px $color
   opacity: .9
 
+= underline-hover
+  &:hover:after
+    content: ''
+    position: absolute
+    bottom: 0
+    left: 0
+    right: 0
+    background: #32b554
+    height: 1px
+    box-shadow: 0 0 2px #32b554
+
+= transition($args...)
+  -webkit-transition: $args
+  -moz-transition: $args
+  transition: $args
 
 body
   color: #000
   font-size: 20px
   background: #fffff3 url("/images/kevin_bg.jpg") center
+  padding-bottom: 50px
 
 a
   text-decoration: none
+  color: inherit
+  position: relative
 
 #container
   max-width: 900px
@@ -41,23 +59,30 @@ a
 
 h1
   text-align: center
-  margin: 50px 0
+  margin: 80px 0 0 0
+  + h2
+    &:before
+      content: "“"
+    &:after
+      content: "”"
   a
     +script
     +blurry($red)
-    font-size: 100px
+    font-size: 130px
     line-height: 100%
 
 h2  
   text-align: center
   +script
-  +blurry(#f92116, 2)
+  +blurry($red, 3)
   font-size: 40px
-  margin: 0 0 50px 0
+  margin: 0 0 80px 0
   line-height: 100%
 
 form
   text-align: center
+  dl
+    margin: 0 0 80px 0
   dd
     margin: 0 0 40px 0
   label
@@ -77,43 +102,48 @@ form
     +blurry($red, 2)
     padding: 5px 20px
     text-align: center
+    border-radius: 200px
     &:focus
       outline: none
-      background: transparentize(#ffebc8, .3)
-      box-shadow: 0 0 5px 3px transparentize(#ffebc8, .3)
+      background: transparentize(#ffebc7, .3)
+      box-shadow: 0 0 5px 3px transparentize(#ffebc7, .3), inset 0 0 8px 0 #dfdbb7, 0 0 4px 0 #dfdbb7
   input[type='submit']
-    background: transparentize($red, .3)
-    box-shadow: 0 0 3px 1px transparentize($red, .3)
-    +blurry(#fffff3, 3)
+    background: url("/images/bg_grey.gif")
+    box-shadow: inset 0 0 2px 2px #fffffe
+    border: 0
+    +blurry(#000, 5)
     +sans
     font-style: italic
     text-transform: uppercase
     outline: none
-    border: 0
     padding: 10px 40px
     font-size: 30px
     cursor: pointer
-    letter-spacing: 4px
+    letter-spacing: 6px
+    border-radius: 200px
     &:hover
-      background: transparentize($red, .1)
-      box-shadow: 0 0 3px 1px transparentize($red, .1)
+      +blurry(#000, 3)
 
 #disambiguate
   text-align: center
   font-size: 26px
   +blurry($size: 1)
   opacity: .95
+  h2
+    margin-bottom: 40px
   ul
     margin: 0 0 50px 0
     li
       margin: 0 0 5px 0
+      span
+        margin: 0 10px
       a
         +sans
         +blurry($size: 2px)
-        &:hover
-          +blurry(#32b554, 2)
+        +underline-hover
 
 #results
+  overflow: hidden
   h3
     +sans
     font-style: italic
@@ -163,6 +193,8 @@ form
         width: 100%
         padding: 30px 0
         position: relative
+        a
+          +underline-hover
         &:before
           content: '•'
           position: relative
