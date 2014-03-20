@@ -146,11 +146,12 @@ form
       &:after
         position: relative
         content: "↑"
-        margin: 0 50px
+        margin: 0 30px 0 0
         font-size: 80%
         top: -20px
       &:after
         content: "↓"
+        margin: 0 0 0 30px
   .result_list
     font-size: 26px
     +blurry($size: 1)
@@ -183,10 +184,13 @@ form
             &.actor:first-of-type + .movie
               &:before
                 content: "←"
+                +blurry(#32b554, 1)
               ~ .movie,
               ~ .actor
                 &:before
                   content: "↔"
+                  +blurry($size: 1)
               ~ .actor:last-of-type
                 &:before
                   content: "→"
+                  +blurry(#32b554, 1)
