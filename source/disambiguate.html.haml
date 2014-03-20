@@ -1,16 +1,20 @@
-%h2 Did you mean one of the below?
-- Phil.loop(1..10) do
-  %p= link_to "#{Phil.name} -> #{Phil.name}"
+#disambiguate
+  %h2 Did you mean one of these?
+  %ul
+    - Phil.loop(1..10) do
+      %li= link_to "#{Phil.name} &rarr; #{Phil.name}".html_safe, "#"
 
 %form{action: "search", method: "get"}
-  %h2 Search
+  %h2 Or you can try a new search, if you like
   %fieldset
-    %p Choose two people
-    %p
-      %label{for: "person1"} From
-      %input#person1{name: "person1", type: "text", value: "mary parker"}/
-    %p
-      %label{for: "person2"} To
-      %input#person2{name: "person2", type: "text", value: "Bacon, Kevin (I)"}/
+    %dl
+      %dt
+        %label{for: "person1"} Choose an actor
+      %dd
+        %input#person1{name: "person1", type: "text"}
+      %dt
+        %label{for: "person2"} Choose another actor
+      %dd
+        %input#person2{name: "person2", type: "text", value: "Bacon, Kevin (I)"}
   %fieldset.actions
-    %input{type: "submit", value: "Go"}
+    %input{type: "submit", value: "Search"}

@@ -1,114 +1,192 @@
-// Tantek Celik's Whitespace Reset
-//      Author:   Tantek Celik, Shane Riley
-//     Version:   (CC) 2010 Some Rights Reserved - http://creativecommons.org/licenses/by/2.0
-// Description: Resets default styling of common browsers to a common base
+@import 'reset'
 
-ul,ol
-  list-style: none
-h1,h2,h3,h4,h5,h6,pre,code
-  font-size: 1em
-ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,body,html,p,blockquote,fieldset,input,dl,dt,dd, figure, figcaption
-  margin: 0
-  padding: 0
-a img,:link img,:visited img, fieldset
-  border: none
-address
-  font-style: normal
-header, section, article, nav, footer, hgroup, details, summary, figure, main
-  display: block
-mark
-  color: inherit
-  background: transparent
-abbr
-  border: none
-summary::-webkit-details-marker
-  display: none
+$fallback: Helvetica, Arial, sans-serif
+
+$red: #f92116
+
+= script
+  font-family: "Dancing Script", $fallback
+  font-weight: normal
+
+= numeral
+  font-family: "Old Standard TT", $fallback
+  font-weight: normal
+  font-style: italic
+
+= sans
+  font-family: "Alegreya Sans", $fallback
+  font-weight: normal
+
+= blurry($color: #000, $size: 4)
+  color: $color
+  @if $size > 2
+    text-shadow: 0 0 #{$size}px $color, 0 0 2px $color
+  @else
+    text-shadow: 0 0 #{$size}px $color
+  opacity: .9
+
 
 body
-  color: #555
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif
-  font-size: 13px
-  background: #faf6ef
+  color: #000
+  font-size: 20px
+  background: #fffff3 url("/images/kevin_bg.jpg") center
 
-h1, h2
-  text-align: center
-  font-family: "Changa One", Helvetica, Arial, sans-serif
-  text-transform: uppercase
-  font-size: 100px
-  color: #dd4624
-  margin: 50px 0
-
-h2
-  font-size: 40px
+a
+  text-decoration: none
 
 #container
-  width: 900px
+  max-width: 900px
   margin: 0 auto
+  padding: 0 20px
 
-fieldset
-  border: 0 none
-  margin: 0
-  padding: 0
+h1
+  text-align: center
+  margin: 50px 0
+  a
+    +script
+    +blurry($red)
+    font-size: 100px
+    line-height: 100%
+
+h2  
+  text-align: center
+  +script
+  +blurry(#f92116, 2)
+  font-size: 40px
+  margin: 0 0 50px 0
+  line-height: 100%
+
+form
+  text-align: center
+  dd
+    margin: 0 0 40px 0
   label
-    display: inline-block
-    width: 30px
-    padding-right: 5px
+    +sans
+    +blurry($size: 1)
+    margin: 0 0 5px 0
+    text-transform: uppercase
+    display: block
+    font-style: italic
+    letter-spacing: 2px
+  input[type='text']
+    background: transparentize(#ffebc7, .3)
+    box-shadow: 0 0 5px 3px transparentize(#ffebc7, .3)
+    border: none
+    +script
+    font-size: 40px
+    +blurry($red, 2)
+    padding: 5px 20px
+    text-align: center
+    &:focus
+      outline: none
+      background: transparentize(#ffebc8, .3)
+      box-shadow: 0 0 5px 3px transparentize(#ffebc8, .3)
+  input[type='submit']
+    background: transparentize($red, .3)
+    box-shadow: 0 0 3px 1px transparentize($red, .3)
+    +blurry(#fffff3, 3)
+    +sans
+    font-style: italic
+    text-transform: uppercase
+    outline: none
+    border: 0
+    padding: 10px 40px
+    font-size: 30px
+    cursor: pointer
+    letter-spacing: 4px
+    &:hover
+      background: transparentize($red, .1)
+      box-shadow: 0 0 3px 1px transparentize($red, .1)
 
-form input[type=submit]
-  -webkit-appearance: none
-  -moz-appearance: none
-  font-size: 14px
-  padding: 8px 12px
-  border: 0 none
-  border-radius: 5px
-  background-color: #77b262
-  color: #fff
-  cursor: pointer
+#disambiguate
+  text-align: center
+  font-size: 26px
+  +blurry($size: 1)
+  opacity: .95
+  ul
+    margin: 0 0 50px 0
+    li
+      margin: 0 0 5px 0
+      a
+        +sans
+        +blurry($size: 2px)
+        &:hover
+          +blurry(#32b554, 2)
 
 #results
   h3
-    position: relative
-    font-family: "Changa One", Helvetica, Arial, sans-serif
+    +sans
+    font-style: italic
     text-align: center
-    display: block
-    margin: 0 auto
-    width: 200px
-    height: 200px
-    line-height: 190px
-    background: #dd4624
-    color: #fff
-    font-size: 100px
-    border-radius: 200px
-    z-index: 2
+    text-transform: uppercase
+    +blurry($size: 2)
+    font-size: 30px
+    letter-spacing: 10px
+    margin: 0 0 50px 0
+  .bacon_number
+    text-align: center
+    margin-bottom: 50px
+    p
+      +sans
+      font-style: italic
+      color: $red
+      font-size: 40px
+      line-height: 80px
+      text-transform: uppercase
+      +blurry($red, 3)
+      letter-spacing: 2px
+    mark
+      +numeral
+      font-size: 150px
+      line-height: 100%
+      +blurry
+      margin: 0 40px
+      display: inline-block
+      &:before,
+      &:after
+        position: relative
+        content: "↑"
+        margin: 0 50px
+        font-size: 80%
+        top: -20px
+      &:after
+        content: "↓"
   .result_list
-    position: relative
-    padding: 100px
-    background: transparentize(#fff, .1)
-    border-radius: 100px
-    z-index: 1
-    box-shadow: inset 0 0 40px darken(desaturate(#faf6ef, 30%), 20%)
-    border-top: 2px solid darken(desaturate(#faf6ef, 30%), 20%)
-    border-bottom: 2px solid #fff
-    margin: -50px 0 50px 0
-    ul
-      margin: 0 0 40px 0
-      li
-        + li
-          padding-left: 20px
-    li
-      padding: 5px 0
-      &:before
-        content: "⇔"
-        color: #999
-        font-size: 15px
-        line-height: 13px
-        font-weight: normal
-        padding: 0 12px
+    font-size: 26px
+    +blurry($size: 1)
+    opacity: .95
+    > ul
+      text-align: center
+      > li
         float: left
-      &:nth-of-type(1):before
-        padding: 0
-        content: ""
-      &.movie
-        font-weight: bold
-      &.actor
-        font-weight: normal
+        width: 100%
+        padding: 30px 0
+        position: relative
+        &:before
+          content: '•'
+          position: relative
+          display: block
+          width: 20px
+          margin: 0 auto
+          opacity: .9
+          +blurry($size: 2)
+          top: -30px
+        ul
+          li
+            display: inline-block
+            +sans
+            &:before
+              margin: 0 20px
+            &:first-of-type,
+            &:last-of-type
+              +blurry(#32b554, 1)
+            &.actor:first-of-type + .movie
+              &:before
+                content: "←"
+              ~ .movie,
+              ~ .actor
+                &:before
+                  content: "↔"
+              ~ .actor:last-of-type
+                &:before
+                  content: "→"

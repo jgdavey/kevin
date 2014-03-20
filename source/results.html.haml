@@ -1,12 +1,16 @@
-- name = Phil.name
-
 #results
-  %h2 Bacon Number:
-  %h3= Phil.pick 1..99
+  %h2 Your Bacon Number has been Calculated
+  .bacon_number
+    %p= Phil.name
+    %mark= Phil.pick 1..99
+    %p= Phil.name
   .result_list
+    %h3 Rationale
     - Phil.loop(1..50) do
       %ul
-        - Phil.loop(1..5) do
-          %li.actor= name
-          %li.movie #{Phil.words(1..5).capitalize} #{1914 + Phil.pick(100)}
-        %li.actor Kevin Bacon
+        %li
+          %ul
+            - Phil.loop(1..5) do
+              %li.actor= Phil.name
+              %li.movie #{Phil.words(1..5).capitalize} #{1914 + Phil.pick(100)}
+            %li.actor Kevin Bacon
