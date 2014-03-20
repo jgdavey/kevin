@@ -1,5 +1,10 @@
 @import 'reset'
 
+= transition($args...)
+  -webkit-transition: $args
+  -moz-transition: $args
+  transition: $args
+
 $fallback: Helvetica, Arial, sans-serif
 
 $red: #f92116
@@ -26,20 +31,16 @@ $red: #f92116
   opacity: .9
 
 = underline-hover
+  position: relative
   &:hover:after
     content: ''
     position: absolute
     bottom: 0
     left: 0
     right: 0
-    background: #32b554
     height: 1px
+    background: #32b554
     box-shadow: 0 0 2px #32b554
-
-= transition($args...)
-  -webkit-transition: $args
-  -moz-transition: $args
-  transition: $args
 
 body
   color: #000
@@ -103,6 +104,7 @@ form
     padding: 5px 20px
     text-align: center
     border-radius: 200px
+    +transition(box-shadow .2s, background .2s)
     &:focus
       outline: none
       background: transparentize(#ffebc7, .3)
@@ -121,8 +123,14 @@ form
     cursor: pointer
     letter-spacing: 6px
     border-radius: 200px
+    +transition(padding .1s)
     &:hover
       +blurry(#000, 3)
+    &:active
+      position: relative
+      top: 1px
+      padding-top: 12px
+      padding-bottom: 8px
 
 #disambiguate
   text-align: center
