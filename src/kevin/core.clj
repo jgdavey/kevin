@@ -161,7 +161,7 @@
     (bidirectional-bfs source target (partial neighbors fdb))))
 
 (defn find-annotated-paths
-  [db source target & {:keys [limit] :or {limit 1000}}]
+  [db source target]
   (let [ename (partial actor-or-movie-name db)
         annotate-node (fn [node]
                         (let [ent (d/entity db node)]
@@ -169,5 +169,4 @@
                            :name (ename ent)
                            :entity ent}))]
     (->> (find-id-paths db source target)
-         (map (partial mapv annotate-node))
-         (take limit))))
+         (map (partial mapv annotate-node)))))

@@ -35,10 +35,10 @@
 
 (defn results [db search]
   (let [[result1 result2] search
-        paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2) :limit 50)
+        paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2))
         bacon-number (int (/ (-> paths first count) 2))]
     (layout/common
-      (if (seq paths)
+      (if (seq (take 50 paths))
         [:div#results
          [:div.bacon_number
           [:p (:name result1)]
