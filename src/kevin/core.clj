@@ -140,6 +140,13 @@
                [(list rule '?actor '?target '?path)])
       db acted-with-rules source target)))
 
+(defn ascending-years? [annotated-node]
+  (not (when-let [years (->> annotated-node
+                             (map :year)
+                             (filter identity)
+                             seq)]
+         (apply > years))))
+
 (defn is-documentary? [entity]
   (let [genres (:movie/genre entity)]
     (and genres (contains? genres :movie.genre/documentary))))
@@ -166,6 +173,7 @@
         annotate-node (fn [node]
                         (let [ent (d/entity db node)]
                           {:type (if (:person/name ent) "actor" "movie")
+                           :year (:movie/year ent)
                            :name (ename ent)
                            :entity ent}))]
     (->> (find-id-paths db source target)
