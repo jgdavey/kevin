@@ -141,11 +141,12 @@
       db acted-with-rules source target)))
 
 (defn ascending-years? [annotated-node]
-  (not (when-let [years (->> annotated-node
+  (if-let [years (->> annotated-node
                              (map :year)
                              (filter identity)
                              seq)]
-         (apply > years))))
+    (apply <= years)
+    true))
 
 (defn is-documentary? [entity]
   (let [genres (:movie/genre entity)]
