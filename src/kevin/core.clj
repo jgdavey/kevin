@@ -2,7 +2,8 @@
   (:require [datomic.api :as d :refer [q db]]
             [clojure.string :refer [split join] :as str]
             [clojure.zip :as zip]
-            [kevin.search :refer [bidirectional-bfs]]))
+            [kevin.search :refer [bidirectional-bfs]])
+  (:import datomic.Datom))
 
 (defprotocol Eid
   (e [_]))
@@ -139,15 +140,25 @@
                [(list rule '?actor '?target '?path)])
       db acted-with-rules source target)))
 
-(defn find-id-paths [db source target]
-  (bidirectional-bfs source target (partial neighbors db)))
+(defn is-documentary? [entity]
+  (let [genres (:movie/genre entity)]
+    (and genres (contains? genres :movie.genre/documentary))))
 
-(defn has-documentaries?
-  [entities]
-  (->> entities
-       (map (comp :movie/genre :entity))
-       (filter identity)
-       (some :movie.genre/documentary)))
+(defn without-documentaries
+  "Returns a function suitable for use with datomic.api/filter"
+  [db]
+  (let [movies-attr (d/entid db :actor/movies)
+        has-documentaries? (fn [db ^Datom datom]
+                             (and (= movies-attr (.a datom))
+                                  (is-documentary? (d/entity db (.v datom)))))]
+    (fn [db ^Datom datom]
+      (not (or (has-documentaries? db datom)
+               (is-documentary? (d/entity db (.e datom))))))))
+
+(defn find-id-paths [db source target]
+  (let [filt (without-documentaries db)
+        fdb (d/filter db filt)]
+    (bidirectional-bfs source target (partial neighbors fdb))))
 
 (defn find-annotated-paths
   [db source target & {:keys [limit] :or {limit 1000}}]
@@ -159,5 +170,4 @@
                            :entity ent}))]
     (->> (find-id-paths db source target)
          (map (partial mapv annotate-node))
-         (remove has-documentaries?)
          (take limit))))

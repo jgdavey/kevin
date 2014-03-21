@@ -186,4 +186,13 @@
       neighbor-fn (partial neighbors d)]
   (time (dotimes [_ 50]
           (bidirectional-bfs clay kevin neighbor-fn))))
+
+
+;; Filter out documentaries
+(let [d (-> system :db :conn db)
+      fd (d/filter d (without-documentaries d))]
+  (q '[:find ?m ?t ?g
+       :in $ ?t
+       :where [?m :movie/title ?t]
+       [?m :movie/genre ?g]] d "Going to Pieces: The Rise and Fall of the Slasher Film (2006)"))
 )
