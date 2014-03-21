@@ -10,17 +10,14 @@
 
 (defn form [person1 person2]
   (form-to [:get "search"]
-           [:h2 "Search"]
            [:fieldset
-            [:p "Choose two people"]
-            [:p
-             (label "person1" "From")
-             (text-field "person1" person1)]
-            [:p
-             (label "person2" "To")
-             (text-field "person2" person2)]]
+            [:dl
+             [:dt (label "person1" "Choose an actor")]
+             [:dd (text-field "person1" person1)]
+             [:dt (label "person2" "Choose another actor")]
+             [:dd (text-field "person2" person2)]]]
            [:fieldset.actions
-            (submit-button "Go")]))
+            (submit-button "calculate")]))
 
 (defn home []
   (layout/common
@@ -43,25 +40,32 @@
     (layout/common
       (if (seq paths)
         [:div#results
-         [:h2 "Results"]
-         [:p "Bacon Number: " [:strong bacon-number]]
-         (for [path paths]
-           [:ul
-            (for [node path] [:li {:class (:type node)}
-                              (imdb-link (:name node) (:type node))])])]
+         [:div.bacon_number
+          [:p (:name result1)]
+          [:mark bacon-number]
+          [:p (:name result2)]]
+         [:div.result_list
+          [:ul
+           (for [path paths]
+             [:li
+              [:ul
+               (for [node path] [:li {:class (:type node)}
+                                 (imdb-link (:name node) (:type node))])]])]]]
         [:p "Not linkable in 5 hops or fewer"]))))
 
 (defn disambiguate [search]
   (let [[result1 result2] search]
     (layout/common
-      [:h2 "Did you mean one of the below?"]
-      (or (seq (for [person1 (:names result1)
-                     person2 (:names result2)]
-                 [:p (link-to
-                       (url "/search" {:person1 person1 :person2 person2})
-                       (str person1 " -> " person2))]))
-          [:p "No Results. Try another search"])
-      (form (:name result1) (:name result2)))))
+      [:div#disambiguate
+       [:h2 "Did you mean one of the below?"]
+       (or (seq (for [person1 (:names result1)
+                      person2 (:names result2)]
+                  [:p (link-to
+                        (url "/search" {:person1 person1 :person2 person2})
+                        (str person1 " &rarr; " person2))]))
+           [:p "No Results. Try another search"])
+       [:h2 "Try a new search, if you like"]
+       (form (:name result1) (:name result2))])))
 
 (defn search [context {:keys [person1 person2]}]
   (let [db (-> context :db :conn d/db)
