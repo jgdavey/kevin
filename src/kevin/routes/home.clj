@@ -41,15 +41,17 @@
         paths (if (seq hard-mode)
                 (filter s/ascending-years? paths)
                 paths)
+        total (count paths)
         bacon-number (int (/ (-> paths first count) 2))]
     (layout/common
-      (if (seq (take 50 paths))
+      (if (seq paths)
         [:div#results
          [:div.bacon_number
           [:p (:name result1)]
           [:mark bacon-number]
           [:p (:name result2)]]
          [:div.result_list
+          [:h3 (str total " Paths")]
           [:ul
            (for [path paths]
              [:li
