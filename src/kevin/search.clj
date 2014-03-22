@@ -74,7 +74,7 @@
            q1 (list start)   ; queue of outgoing things to check
            q2 (list end)     ; queue of incoming things to check
            iter 1]
-      (when (and (seq q1) (seq q2) (< iter 11)) ; 5 "hops" or fewer
+      (when (and (seq q1) (seq q2) (< iter 13)) ; 6 "hops" or fewer
         (if (<= (count q1) (count q2))
           (let [pairs (find-pairs q1 preds)
                 preds (map-set-pairs preds pairs)
