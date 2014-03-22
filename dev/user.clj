@@ -131,6 +131,18 @@
       actor-name (partial actor-or-movie-name d)]
   (time (map actor-name (bfs clay kevin neighbor-fn))))
 
+;; history-graham?
+(time
+(let [d (-> system :db :conn db)
+      d (d/filter d (without-documentaries d))
+      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      neighbor-fn (partial neighbors d)]
+  (->> (degrees-of-separation kevin neighbor-fn :up-to 15)
+       (reduce-kv (fn [m k v]
+                    (if (even? k)
+                      (assoc m (/ k 2) (count v))
+                      m)) {})))
+)
 
 ;; query engine search (3 degrees)
 (let [d (-> system :db :conn db)

@@ -32,6 +32,21 @@
          (mapcat #(paths nodes-fn (conj path %)))
          (cons path))))
 
+(defn degrees-of-separation
+  [start neighbor-fn & {:keys [up-to] :or {up-to 13}}]
+  (loop [q #{start}
+         distances {0 q}
+         i 1]
+    (if (< i up-to) ; Has anyone really been far even?
+      (let [next-q (set (flatten (for [node q
+                                       neighbor (neighbor-fn node)
+                                       :when (not-any? (fn [coll]
+                                                         (contains? coll neighbor))
+                                                       (vals distances))]
+                                   neighbor)))]
+        (recur next-q (assoc distances i next-q) (inc i)))
+      distances)))
+
 (defn trace-paths [m start]
   (remove #(m (peek %)) (paths m [start])))
 
