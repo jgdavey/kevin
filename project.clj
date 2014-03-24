@@ -5,6 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [hiccup "1.0.5"]
+                 [enlive "1.1.5"]
                  [environ "0.4.0"]
                  [ring-server "0.3.1"]
                  [compojure "1.1.6"]]

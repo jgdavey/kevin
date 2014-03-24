@@ -1,85 +1,19 @@
 (ns kevin.routes.home
   (:require [compojure.core :refer :all]
-            [hiccup.form :refer :all]
-            [hiccup.util :refer [url]]
-            [hiccup.element :refer [link-to]]
-            [clojure.string :as str]
             [datomic.api :as d]
             [kevin.core :as s]
-            [kevin.views.layout :as layout]))
-
-(defn form [person1 person2 hard-mode]
-  (form-to [:get "search"]
-           [:fieldset
-            [:dl
-             [:dt (label "person1" "Choose an actor")]
-             [:dd (text-field "person1" person1)]
-             [:dt (label "person2" "Choose another actor")]
-             [:dd (text-field "person2" person2)]]
-            (label "hard-mode" "Use hard mode?")
-            (check-box "hard-mode" (seq hard-mode))]
-           [:fieldset.actions
-            (submit-button "calculate")]))
+            [kevin.views :as views]))
 
 (defn home []
-  (layout/common
-    (form "Bacon, Kevin (I)" nil nil)))
+  (views/main-template
+    :body (views/form "Bacon, Kevin (I)" nil nil)))
 
-(defn simple-escape [text]
-  (.. text (replace " " "+") (replace "&" "%26")))
-
-(defn- imdb-link [name type]
-  [:a {:href (str "http://imdb.com/find?exact="
-                  (= type "movie")
-                  "&q="
-                  (simple-escape name))}
-   name])
-
-(defn results [db search {:keys [hard-mode]}]
-  (let [[result1 result2] search
-        paths (s/find-annotated-paths db (:actor-id result1) (:actor-id result2))
-        paths (if (seq hard-mode)
-                (filter s/ascending-years? paths)
-                paths)
-        total (count paths)
-        bacon-number (int (/ (-> paths first count) 2))]
-    (layout/common
-      (if (seq paths)
-        [:div#results
-         [:div.bacon_number
-          [:p (:name result1)]
-          [:mark bacon-number]
-          [:p (:name result2)]]
-         [:div.result_list
-          [:h3 (str total " Paths")]
-          [:ul
-           (for [path paths]
-             [:li
-              [:ul
-               (for [node path] [:li {:class (:type node)}
-                                 (imdb-link (:name node) (:type node))])]])]]]
-        [:p "Not linkable in 5 hops or fewer"]))))
-
-(defn disambiguate [search {:keys [hard-mode]}]
-  (let [[result1 result2] search]
-    (layout/common
-      [:div#disambiguate
-       [:h2 "Did you mean one of the below?"]
-       (or (seq (for [person1 (:names result1)
-                      person2 (:names result2)]
-                  [:p (link-to
-                        (url "/search" {:person1 person1 :person2 person2 :hard-mode (str hard-mode)})
-                        (str person1 " &rarr; " person2))]))
-           [:p "No Results. Try another search"])
-       [:h2 "Try a new search, if you like"]
-       (form (:name result1) (:name result2) hard-mode)])))
-
-(defn search [context {:keys [person1 person2] :as params}]
+(defn search [context {:keys [person1 person2 hard-mode] :as params}]
   (let [db (-> context :db :conn d/db)
         search (s/search db person1 person2)]
     (if (every? :actor-id search)
-      (results db search params)
-      (disambiguate search params))))
+      (views/results-page (s/annotate-search db search (seq hard-mode)))
+      (views/disambiguate search params))))
 
 (defn home-routes [context]
   (routes

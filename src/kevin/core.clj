@@ -162,7 +162,6 @@
     (fn [db ^Datom datom]
       (not (or (has-documentaries? db datom)
                (is-documentary? (d/entity db (.e datom))))))))
-
 (defn find-id-paths [db source target]
   (let [filt (without-documentaries db)
         fdb (d/filter db filt)]
@@ -179,3 +178,18 @@
                            :entity ent}))]
     (->> (find-id-paths db source target)
          (map (partial mapv annotate-node)))))
+
+(defn annotate-search [db search hard-mode]
+  (let [[result1 result2] search
+        paths (find-annotated-paths db (:actor-id result1) (:actor-id result2))
+        paths (if hard-mode
+                (filter ascending-years? paths)
+                paths)
+        total (count paths)
+        bacon-number (int (/ (-> paths first count) 2))]
+    {:total total
+     :paths paths
+     :start (:name result1)
+     :end   (:name result2)
+     :bacon-number bacon-number
+     :hard-mode? hard-mode}))
