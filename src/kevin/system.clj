@@ -1,6 +1,7 @@
 (ns kevin.system
   (:require [datomic.api :as d]
             [kevin.handler :as handler]
+            [clojure.tools.nrepl.server :as repl]
             [environ.core :refer [env]]
             [ring.server.standalone :refer (serve)]))
 
@@ -26,6 +27,15 @@
     (d/release conn))
   (assoc-in system [:db :conn] nil))
 
+(defn- start-repl [system]
+  (let [repl-server (repl/start-server :port (get-in system [:repl :port]))]
+    (assoc-in system [:repl :server] repl-server)))
+
+(defn- stop-repl [system]
+  (when-let [repl-server (get-in system [:repl :server])]
+    (repl/stop-server repl-server))
+  (assoc-in system [:repl :server] nil))
+
 (defn- setup-handler [system]
   (let [web-opts (:web system)
         handler (handler/app system)]
@@ -40,7 +50,8 @@
   "Returns a new instance of the whole application."
   []
   {:db {:uri (env :datomic-db-url)}
-   :web {:open-browser? false}})
+   :web {:open-browser? false}
+   :repl {:port 7888}})
 
 (defn start
   "Performs side effects to initialize the system, acquire resources,
@@ -48,6 +59,7 @@
   [system]
    (-> system
        start-db
+       start-repl
        setup-handler))
 
 (defn stop
@@ -57,6 +69,7 @@
   (when system
     (-> system
         teardown-handler
+        stop-repl
         stop-db)))
 
 ;; external ring handlers
