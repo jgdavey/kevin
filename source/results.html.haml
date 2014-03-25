@@ -1,15 +1,16 @@
 #results
   .bacon_number
     %p= Phil.name
-    %mark= Phil.pick 1..99
+    %mark= Phil.pick 1..9
     %p= Phil.name
   .result_list
-    %h3 #{Phil.pick(1..50)} Connections
-    - Phil.loop(1..50) do
+    - connections = Phil.pick(1..10)
+    %h3 #{connections} Connections
+    - connections.times do
       %ul
         %li
           %ul
             - Phil.loop(1..5) do
               %li.actor= link_to Phil.name, "#"
-              %li.movie= link_to "#{Phil.words(1..5).capitalize} (#{1914 + Phil.pick(100)})", "#"
+              %li.movie= link_to "#{Phil.words(1..5).capitalize} (#{1914 + Phil.pick(1..100)})", "#"
             %li.actor= link_to Phil.name, "#"
