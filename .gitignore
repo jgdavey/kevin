@@ -18,3 +18,9 @@ data
 .gem
 /source
 dev/transactor.properties
+
+# Ignore generated assets. Generate with ./d
+resources/public/images
+resources/public/stylesheets
+resources/public/javascripts
+resources/templates/*.html
