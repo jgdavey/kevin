@@ -1,4 +1,4 @@
-(defproject kevin "0.1.1"
+(defproject kevin "0.1.2"
   :description "It's like Kevin Bacon is right here!"
   :url "http://imdb.com"
   :license {:name "Eclipse Public License"
@@ -8,6 +8,7 @@
                  [hiccup "1.0.5"]
                  [enlive "1.1.5"]
                  [environ "0.4.0"]
+                 [lib-noir "0.8.1"]
                  [ring-server "0.3.1"]
                  [compojure "1.1.6"]]
   :plugins [[lein-ring "0.8.10"]
