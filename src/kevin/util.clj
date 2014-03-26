@@ -14,3 +14,6 @@
        (remove str/blank?)
        (map #(str "+" % "*"))
        (join " ")))
+
+(defn format-name [name]
+  (str/replace-first name #"^([^,]+), (.+?)( \([IVX]+\))?$" "$2 $1$3"))

@@ -4,3 +4,11 @@
 
 (deftest test-format-query
   (is (= "+J* +Digg*" (format-query "J Digg"))))
+
+(deftest test-format-name
+  (are [x y] (= (format-name x) y)
+       "Wayne, John"     "John Wayne"
+       "Wayne, John (I)" "John Wayne (I)"
+       "Shakira"         "Shakira"
+       "Watts, J (I) W"  "J (I) W Watts"
+       "Wayne John, Juan Wayne (XII)" "Juan Wayne Wayne John (XII)"))

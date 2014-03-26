@@ -1,6 +1,7 @@
 (ns kevin.views
   (:require [hiccup.util :refer [url]]
             [clojure.string :as str]
+            [kevin.util :refer :all]
             [net.cgrand.enlive-html :as html
              :refer [defsnippet deftemplate do-> content clone-for
                      substitute set-attr nth-of-type first-of-type
@@ -40,8 +41,8 @@
   [[person1 person2]]
   [:a] (set-attr :href (str (url "/search" {:person1 person1 :person2 person2})))
   [:a :> html/text-node] (html/wrap :rel)
-  [:a :> [:rel html/first-child]] (content person1)
-  [:a :> [:rel html/last-child]] (content person2)
+  [:a :> [:rel html/first-child]] (content (format-name person1))
+  [:a :> [:rel html/last-child]] (content (format-name person2))
   [:a :> :rel] html/unwrap)
 
 (defsnippet possibilities "templates/disambiguate.html" [:#disambiguate]
@@ -59,12 +60,17 @@
        "&q="
        (simple-escape name)))
 
+(defn- display-name [{:keys [name type]}]
+  (if (= type "actor")
+    (format-name name)
+    name))
+
 (defsnippet result-node "templates/results.html"  (conj *result-sel* [:li (nth-of-type 1)])
   [node]
   [:li] (set-attr :class (:type node))
   [:li :a] (do->
              (set-attr :href (imdb-link node))
-             (content (:name node))))
+             (content (display-name node))))
 
 (defsnippet result "templates/results.html" *result-sel*
   [path]
@@ -77,8 +83,8 @@
                                                     (content (result path)))
   [:.result_list :> :h3] (content (str total " paths"))
   [:.bacon_number :mark] (content (str bacon-number))
-  [:.bacon_number [:p first-of-type]] (content start)
-  [:.bacon_number [:p last-of-type]] (content end))
+  [:.bacon_number [:p first-of-type]] (content (format-name start))
+  [:.bacon_number [:p last-of-type]] (content (format-name end)))
 
 (defn disambiguate [search {:keys [hard-mode]}]
   (let [[result1 result2] search
