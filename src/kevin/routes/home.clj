@@ -6,7 +6,7 @@
 
 (defn home []
   (views/main-template
-    :body (views/form "Bacon, Kevin (I)" nil nil)))
+    :body (views/form "Kevin Bacon" nil nil)))
 
 (defn search [context {:keys [person1 person2 hard-mode] :as params}]
   (let [db (-> context :db :conn d/db)
