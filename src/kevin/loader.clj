@@ -74,7 +74,13 @@
 (defn role-line? [^String line]
   (and
     (movie-line? line)
-    (not= -1 (.indexOf line ")")) ))
+    (not= -1 (.indexOf line ")"))))
+
+(defn legit-role? [^String line]
+  (and
+    (= -1 (.indexOf line "(archive footage)"))
+    (= -1 (.indexOf line "(unconfirmed)"))
+    (= -1 (.indexOf line "(archival"))))
 
 (defn split-by [pred coll]
   (let [remove-sep (fn [el] ((complement pred) (first el)))]
@@ -101,6 +107,19 @@
                                 }) movies)
             actor-tx  { :db/id actor-id, :person/name actor }]
       (concat [actor-tx] movie-txs)))))
+
+(defn retract-roles
+  ([a] (actor-tx-data (db conn) a))
+  ([d {:keys [actor movies]}]
+   (->> (q '[:find ?actor ?movie
+             :in $ ?name [?title ...]
+             :where
+             [?actor :person/name ?name]
+             [?actor :actor/movies ?movie]
+             [?movie :movie/title ?title]]
+           d actor movies)
+        (map (fn [[actor movie]]
+               [:db/retract actor :actor/movies movie])))))
 
 (defn parse-genre [db ^String line]
   (let [[title genre] (map #(.trim %) (clojure.string/split line #"\t+"))]
@@ -152,6 +171,27 @@
         (filter identity)
         (map parse-fn)
         (filter identity))))
+
+(defn parse-bogus-roles [lines]
+  (let [{actor :actor potential-roles :movies} (extract-potential-roles lines)
+        roles (map extract-role (filter #(and (role-line? %) (not (legit-role? %))) potential-roles))
+        movies (filter identity roles)]
+    (when (and (seq movies) actor)
+      { :actor actor :movies movies })))
+
+(defn retract-bogus-roles [lines]
+  (try
+    (let [actor-roles (actors-and-roles lines parse-bogus-roles)]
+      (doseq [batch (partition-all *batch-size* actor-roles)]
+        (let [d (db conn)
+              tx (mapcat (partial retract-roles d) batch)]
+          (if (empty? tx)
+            (print "-")
+            (do (d/transact-async conn tx)
+                (print "."))))
+        (flush)))
+    (catch Exception e))
+  (println "done"))
 
 (defn parse-actors [lines]
   (try
