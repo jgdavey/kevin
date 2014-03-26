@@ -19,9 +19,9 @@
          :destroy kevin.system/destroy }
   :profiles {:production
              {:ring {:open-browser? false :stacktraces? false :auto-reload? false}
-              :dependencies [[com.datomic/datomic-pro "0.9.4578"]]}
+              :dependencies [[com.datomic/datomic-pro "0.9.4699"]]}
              :dev {:source-paths ["dev"]
-                   :dependencies [[com.datomic/datomic-free "0.9.4578"]
+                   :dependencies [[com.datomic/datomic-free "0.9.4699"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.2"]
                                   [javax.servlet/servlet-api "2.5"]
