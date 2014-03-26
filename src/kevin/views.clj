@@ -39,10 +39,10 @@
 
 (defsnippet possibility "templates/disambiguate.html" [:#disambiguate [:li (nth-of-type 1)]]
   [[person1 person2]]
-  [:a] (set-attr :href (str (url "/search" {:person1 person1 :person2 person2})))
+  [:a] (set-attr :href (str (url "/search" {:person1 (:name person1) :person2 (:name person2)})))
   [:a :> html/text-node] (html/wrap :rel)
-  [:a :> [:rel html/first-child]] (content (format-name person1))
-  [:a :> [:rel html/last-child]] (content (format-name person2))
+  [:a :> [:rel html/first-child]] (content (format-name (:name person1)))
+  [:a :> [:rel html/last-child]] (content (format-name (:name person2)))
   [:a :> :rel] html/unwrap)
 
 (defsnippet possibilities "templates/disambiguate.html" [:#disambiguate]
@@ -86,15 +86,11 @@
   [:.bacon_number [:p first-of-type]] (content (format-name start))
   [:.bacon_number [:p last-of-type]] (content (format-name end)))
 
-(defn disambiguate [search {:keys [hard-mode]}]
-  (let [[result1 result2] search
-        pairs (for [person1 (:names result1)
-                    person2 (:names result2)]
-                [person1 person2])]
-    (main-template :title "Did you mean one of these?"
-                   :body [(possibilities pairs)
-                          (html/html [:h2 "Try a new search"])
-                          (form (:name result1) (:name result2) hard-mode)])))
+(defn disambiguate [pairs {:keys [hard-mode person1 person2]}]
+  (main-template :title "Did you mean one of these?"
+                 :body [(possibilities pairs)
+                        (html/html [:h2 "Try a new search"])
+                        (form person1 person2 hard-mode)]))
 
 (defn results-page [{:keys [paths start end] :as res}]
   (main-template :body (if (seq paths)

@@ -11,8 +11,8 @@
 (defn search [context {:keys [person1 person2 hard-mode] :as params}]
   (let [db (-> context :db :conn d/db)
         search (s/search db person1 person2)]
-    (if (every? :actor-id search)
-      (views/results-page (s/annotate-search db search (seq hard-mode)))
+    (if (= 1 (count search))
+      (views/results-page (s/annotate-search db (first search) (seq hard-mode)))
       (views/disambiguate search params))))
 
 (defn home-routes [context]

@@ -37,17 +37,6 @@
      (acted-with ?x ?e2 ?p2)
      [(concat ?p1 ?p2) ?path]]])
 
-
-(defn actor-search
-  "query will be passed as-is to Lucene"
-  [db query]
-  (if (str/blank? query)
-    #{}
-    (q '[:find ?e ?name
-        :in $ ?search
-        :where [(fulltext $ :person/name ?search) [[?e ?name]]]]
-      db query)))
-
 (defn actor-or-movie-name [db eid]
   (let [ent (d/entity db (e eid))]
     (or (:movie/title ent) (:person/name ent))))
@@ -78,6 +67,21 @@
   (-> (d/entity db (e eid))
       :person/name))
 
+(defn actor-search
+  "Returns set with exact match, if found. Otherwise query will
+  be formatted with format-query passed as-is to Lucene"
+  [db query]
+  (if (str/blank? query)
+    #{}
+    (if-let [eid (actor-name->eid db query)]
+      [{:name query :actor-id eid}]
+      (mapv #(zipmap [:actor-id :name] %)
+            (q '[:find ?e ?name
+                 :in $ ?search
+                 :where [(fulltext $ :person/name ?search) [[?e ?name]]]]
+               db (format-query query))))))
+
+
 (defn actor-movies
   [db eid]
   (map :v (d/datoms db :eavt eid :actor/movies)))
@@ -105,20 +109,12 @@
         make-node (fn [_ c] c)]
     (zip/zipper branch? children make-node eid)))
 
-(defn name-or-search [db person]
-  (let [actor (actor-name->eid db person)
-        result {:name person :actor-id actor}]
-    (assoc result :names
-           (cond
-             (not person) (list)
-             actor (list person)
-             :else (->> person
-                        format-query
-                        (actor-search db)
-                        (map last))))))
-
-(defn search [db & people]
-  (mapv (partial name-or-search db) people))
+(defn search [db start end]
+  (let [s (partial actor-search db)
+        starts (s start)
+        ends (s end)]
+    (for [p1 starts, p2 ends]
+      [p1 p2])))
 
 (defn path-at-depth [db source target depth]
   (let [rule (symbol (str "acted-with-" depth))]
