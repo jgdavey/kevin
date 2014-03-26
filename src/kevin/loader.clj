@@ -82,9 +82,11 @@
 
 (defn store-movies [batch]
   (let [titles (map (fn [b]
-                      {:db/id (d/tempid :db.part/user)
-                       :movie/title b
-                       :movie/year (extract-year b)})
+                      (let [tx {:db/id (d/tempid :db.part/user)
+                                :movie/title b}]
+                        (if-let [year (extract-year b)]
+                          (assoc tx :movie/year year)
+                          tx)))
                     batch)]
     @(d/transact conn titles)))
 
@@ -128,22 +130,33 @@
   (let [paren (. role-line (indexOf ")"))]
     (.. role-line (substring 0 (inc paren)) trim)))
 
-(defn parse-actor [[actor-line & roles]]
-  (let [[actor title & rest] (clojure.string/split actor-line #"\t+")
-        roles (map extract-role (filter role-line? (map #(.trim %) (conj roles title))))
+(defn extract-potential-roles [[actor-line & role-lines]]
+  (let [[actor title & rest] (clojure.string/split actor-line #"\t+")]
+    {:actor actor
+     :movies (map #(.trim %) (conj role-lines title))}))
+
+(defn parse-actor [lines]
+  (let [{actor :actor potential-roles :movies} (extract-potential-roles lines)
+        roles (map extract-role (filter #(and (role-line? %) (legit-role? %)) potential-roles))
         movies (filter identity roles)]
-    (when (and (not (empty? movies)) actor)
+    (when (and (seq movies) actor)
       { :actor actor :movies movies })))
+
+(defn actors-and-roles
+  ([lines]
+   (actors-and-roles lines parse-actor))
+  ([lines parse-fn]
+   (->> lines
+        (drop 3)
+        (split-by empty?)
+        (filter identity)
+        (map parse-fn)
+        (filter identity))))
 
 (defn parse-actors [lines]
   (try
-    (let [actors-and-roles (->> lines
-                                (drop 3)
-                                (split-by empty?)
-                                (filter identity)
-                                (map parse-actor)
-                                (filter identity))]
-      (doseq [batch (partition-all *batch-size* actors-and-roles)]
+    (let [actor-roles (actors-and-roles lines)]
+      (doseq [batch (partition-all *batch-size* actor-roles)]
         (let [d (db conn)
               tx (mapcat (partial actor-tx-data d) batch)]
           (if (empty? tx)
