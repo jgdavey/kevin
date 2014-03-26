@@ -76,19 +76,26 @@
   [path]
   [:ul] (content (map result-node path)))
 
+(defn paths-count [paths bacon-number]
+  (let [total (str paths " path" (when-not (= 1 paths) "s"))
+        degrees (str bacon-number " degree" (when-not (= 1 bacon-number) "s"))]
+    (str total " with " degrees " of separation")))
+
 (defsnippet results "templates/results.html" [:#results]
   [{:keys [paths total start end bacon-number]}]
   [:.result_list :> [:ul (html/but first-of-type)]] nil
   [:.result_list :> [:ul first-of-type]] (clone-for [path paths]
                                                     (content (result path)))
-  [:.result_list :> :h3] (content (str total " paths"))
+  [:.result_list :> :h3] (content (paths-count total bacon-number))
   [:.bacon_number :mark] (content (str bacon-number))
   [:.bacon_number [:p first-of-type]] (content (format-name start))
   [:.bacon_number [:p last-of-type]] (content (format-name end)))
 
 (defn disambiguate [pairs {:keys [hard-mode person1 person2]}]
   (main-template :title "Did you mean one of these?"
-                 :body [(possibilities pairs)
+                 :body [(if (seq pairs)
+                          (possibilities pairs)
+                          (html/html [:h2 "Oops. We couldn't find one of those actors"]))
                         (html/html [:h2 "Try a new search"])
                         (form person1 person2 hard-mode)]))
 
