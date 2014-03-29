@@ -38,11 +38,10 @@
          distances {0 q}
          i 1]
     (if (< i up-to) ; Has anyone really been far even?
-      (let [next-q (set (flatten (for [node q
+      (let [visited (vals distances)
+            next-q (set (flatten (for [node q
                                        neighbor (neighbor-fn node)
-                                       :when (not-any? (fn [coll]
-                                                         (contains? coll neighbor))
-                                                       (vals distances))]
+                                       :when (not-any? #(contains? % neighbor) visited)]
                                    neighbor)))]
         (recur next-q (assoc distances i next-q) (inc i)))
       distances)))
