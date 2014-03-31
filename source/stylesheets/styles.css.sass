@@ -1,5 +1,21 @@
 @import 'reset'
 
+= max-width($width: 640)
+  @media screen and (max-width: #{$width}px)
+    @content
+
+= tablet
+  +max-width(768)
+    @content
+
+= mobile
+  +max-width(480)
+    @content
+
+= retina
+  @media screen and (-webkit-min-device-pixel-ratio: 2), screen and (min-device-pixel-ratio: 2)
+    @content
+
 = transition($args...)
   -webkit-transition: $args
   -moz-transition: $args
@@ -18,17 +34,19 @@ $red: #f92116
   font-weight: normal
   font-style: italic
 
-= sans
+= sans($weight: 800)
   font-family: "Alegreya Sans", $fallback
-  font-weight: normal
+  font-weight: $weight
 
 = blurry($color: #000, $size: 4)
-  color: $color
+  color: transparentize($color, .6)
   @if $size > 2
     text-shadow: 0 0 #{$size}px $color, 0 0 2px $color
   @else
     text-shadow: 0 0 #{$size}px $color
-  opacity: .9
+  +retina
+    color: transparent
+    text-shadow: 0 0 1px $color
 
 = underline-hover
   position: relative
@@ -47,6 +65,8 @@ body
   font-size: 20px
   background: #fffff3 url("/images/kevin_bg.jpg") center
   padding-bottom: 50px
+  -webkit-font-smoothing: antialiased
+  -webkit-text-size-adjust: none
 
 a
   text-decoration: none
@@ -60,17 +80,28 @@ a
 
 h1
   text-align: center
-  margin: 80px 0 0 0
   + h2
     &:before
       content: "“"
     &:after
       content: "”"
   a
+    display: block
     +script
     +blurry($red)
     font-size: 130px
     line-height: 100%
+    margin: 80px 0 0 0
+    +max-width(768)
+      font-size: 80px
+    +max-width(480)
+      font-size: 60px
+      +blurry($red, 3)
+    +tablet
+      margin-top: 60px
+    +mobile
+      margin-top: 40px
+      font-size: 60px
 
 h2  
   text-align: center
@@ -79,16 +110,20 @@ h2
   font-size: 40px
   margin: 0 0 80px 0
   line-height: 100%
+  +tablet
+    margin-bottom: 60px
+  +mobile
+    margin-bottom: 40px
+    font-size: 30px
+    +blurry($red, 2)
 
 form
   text-align: center
-  dl
-    margin: 0 0 80px 0
   dd
     margin: 0 0 40px 0
   label
     +sans
-    +blurry($size: 1)
+    +blurry($size: 2)
     margin: 0 0 5px 0
     text-transform: uppercase
     display: block
@@ -100,11 +135,14 @@ form
     border: none
     +script
     font-size: 40px
+    line-height: 60px
     +blurry($red, 2)
-    padding: 5px 20px
+    padding: 5px 0
     text-align: center
     border-radius: 200px
     +transition(box-shadow .2s, background .2s)
+    width: 100%
+    max-width: 400px
     &:focus
       outline: none
       background: transparentize(#ffebc7, .3)
@@ -135,8 +173,10 @@ form
 #disambiguate
   text-align: center
   font-size: 26px
-  +blurry($size: 1)
+  +blurry($size: 2)
   opacity: .95
+  +mobile
+    font-size: 22px
   h2
     margin-bottom: 40px
   ul
@@ -145,8 +185,10 @@ form
       margin: 0 0 5px 0
       span
         margin: 0 10px
+        +mobile
+          margin: 0 5px
       a
-        +sans
+        +sans(normal)
         +blurry($size: 2px)
         +underline-hover
 
@@ -160,25 +202,38 @@ form
     +blurry($size: 2)
     font-size: 30px
     letter-spacing: 10px
+    +mobile
+      font-size: 20px
+  h4
+    +sans
+    text-align: center
+    font-style: italic
     margin: 0 0 50px 0
+    +blurry($size: 2)
+    font-size: 20px
+    +mobile
+      margin-bottom: 15px
   .bacon_number
     text-align: center
     margin-bottom: 50px
+    +mobile
+      margin-bottom: 40px
     p
       +sans
       font-style: italic
       color: $red
       font-size: 40px
-      line-height: 80px
       text-transform: uppercase
       +blurry($red, 3)
       letter-spacing: 2px
+      line-height: 140%
+      +mobile
+        font-size: 25px
     mark
       +numeral
       font-size: 150px
       line-height: 100%
       +blurry
-      margin: 0 40px
       display: inline-block
       &:before,
       &:after
@@ -187,13 +242,19 @@ form
         margin: 0 30px 0 0
         font-size: 80%
         top: -20px
+        +mobile
+          margin-right: 15px
       &:after
         content: "↓"
         margin: 0 0 0 30px
+        +mobile
+          margin-left: 15px
   .result_list
     font-size: 26px
-    +blurry($size: 1)
+    +blurry($size: 2)
     opacity: .95
+    +mobile
+      font-size: 22px
     > ul
       text-align: center
       > li
@@ -212,25 +273,31 @@ form
           opacity: .9
           +blurry($size: 2)
           top: -30px
+        +mobile
+          padding: 15px 0
+          &:before
+            top: -15px
         ul
           li
             display: inline-block
-            +sans
+            +sans(normal)
             &:before
               margin: 0 20px
+              +mobile
+                margin: 0 5px
             &:first-of-type,
             &:last-of-type
-              +blurry(#32b554, 1)
+              +blurry(#32b554, 2)
             &.actor:first-of-type + .movie
               &:before
                 content: "←"
-                +blurry(#32b554, 1)
+                +blurry(#32b554, 2)
               ~ .movie,
               ~ .actor
                 &:before
                   content: "↔"
-                  +blurry($size: 1)
+                  +blurry($size: 2)
               ~ .actor:last-of-type
                 &:before
                   content: "→"
-                  +blurry(#32b554, 1)
+                  +blurry(#32b554, 2)

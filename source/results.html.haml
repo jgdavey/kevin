@@ -5,7 +5,8 @@
     %p= Phil.name
   .result_list
     - connections = Phil.pick(1..10)
-    %h3 #{connections} Connections
+    %h3 #{connections} Paths
+    %h4 (with #{Phil.pick(1..10)} degrees of separation)
     - connections.times do
       %ul
         %li

@@ -3,6 +3,7 @@
   %head
     %meta{charset: "utf-8"}/
     %meta{content: "IE=edge,chrome=1", "http-equiv" => "X-UA-Compatible"}/
+    %meta(name="viewport" content="width=device-width, initial-scale=1")
     %title= current_page.data.title || "Kevin Bacon"
     = stylesheet_link_tag "styles"
     = javascript_include_tag  "all"
@@ -12,5 +13,5 @@
   %body{class: page_classes}
     #container
       %h1= link_to "Kevin Bacon", "#"
-      %h2 find any old bacon number
+      %h2= link_to "find any old bacon number", "#"
       = yield
