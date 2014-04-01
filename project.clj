@@ -11,6 +11,7 @@
                  [environ "0.4.0"]
                  [lib-noir "0.8.1" :exclusions [org.clojure/core.cache ring]]
                  [ring-server "0.3.1"]
+                 [ring "1.2.1"]
                  [compojure "1.1.6"]]
   :plugins [[lein-ring "0.8.10"]
             [lein-beanstalk "0.2.7"]]
@@ -21,8 +22,7 @@
          :destroy kevin.system/destroy }
   :profiles {:production
              {:ring {:open-browser? false :stacktraces? false :auto-reload? false}
-              :dependencies [[com.datomic/datomic-pro "0.9.4699"]
-                             [ring "1.2.1" :exclusions [ring/ring-devel]]]}
+              :dependencies [[com.datomic/datomic-pro "0.9.4699"]]}
              :dev {:source-paths ["dev"]
                    :dependencies [[com.datomic/datomic-free "0.9.4699"]
                                   [org.clojure/tools.namespace "0.2.4"]
