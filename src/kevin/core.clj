@@ -84,8 +84,15 @@
                  :where [(fulltext $ :person/name ?search) [[?e ?name]]]]
                db (format-query query))))))
 
+(defn movie-actors
+  "Given a datomic database value and a movie id,
+  returns ids for actors in that movie."
+  [db eid]
+  (map :e (d/datoms db :vaet eid :actor/movies)))
 
 (defn actor-movies
+  "Given a datomic database value and an actor id,
+  returns ids for movies that actor was in."
   [db eid]
   (map :v (d/datoms db :eavt eid :actor/movies)))
 
@@ -94,14 +101,14 @@
   eid is actor's entity id"
   [db eid]
   (->> (actor-movies db eid)
-      (mapcat (partial referring-to db))))
+       (mapcat (partial referring-to db))))
 
 (defn neighbors
-  "d is database value
+  "db is database value
   eid is an actor or movie eid"
   [db eid]
   (or (seq (actor-movies db (e eid)))
-      (seq (referring-to db (e eid)))))
+      (seq (movie-actors db (e eid)))))
 
 (defn zipper
   "db is database value
