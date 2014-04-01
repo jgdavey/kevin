@@ -56,13 +56,6 @@
   (->> (d/datoms db :avet attr val)
        (map :e)))
 
-(defn actor-name->eid
-  "db is database value
-  name is the actor's name"
-  [db name]
-  (-> (eids-with-attr-val db :person/name name)
-    first))
-
 (defn eid->actor-name
   "db is database value
   name is the actor's name"
@@ -76,7 +69,7 @@
   [db query]
   (if (str/blank? query)
     #{}
-    (if-let [eid (actor-name->eid db query)]
+    (if-let [eid (d/entid db [:actor/name query])]
       [{:name query :actor-id eid}]
       (mapv #(zipmap [:actor-id :name] %)
             (q '[:find ?e ?name

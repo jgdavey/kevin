@@ -107,9 +107,9 @@
 
 ;; zipper
 (let [d (-> system :db :conn db)
-      a (actor-name->eid d "Barth, Clayton")
+      a (d/entid d [:actor/name "Barth, Clayton"])
       actor-name (partial eid->actor-name d)
-      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      kevin (d/entid d [:actor/name "Bacon, Kevin (I)"])
       tree (zipper d a)]
   (time (some (fn [n] (when (= kevin n) n)) tree)))
 
@@ -117,16 +117,16 @@
 ;; bi-directional bfs
 (def from-bfs
   (let [d (-> system :db :conn db)
-        clay (actor-name->eid d "Barth, Clayton")
-        kevin (actor-name->eid d "Bacon, Kevin (I)")
+        clay (d/entid d [:actor/name "Barth, Clayton"])
+        kevin (d/entid d [:actor/name "Bacon, Kevin (I)"])
         neighbor-fn (partial neighbors d)]
     (time (bidirectional-bfs clay kevin neighbor-fn)))
   )
 
 ;; queue-based search
 (let [d (-> system :db :conn db)
-      clay (actor-name->eid d "Barth, Clayton")
-      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      clay (d/entid d [:actor/name "Barth, Clayton"])
+      kevin (d/entid d [:actor/name "Bacon, Kevin (I)"])
       neighbor-fn (partial neighbors d)
       actor-name (partial actor-or-movie-name d)]
   (time (map actor-name (bfs clay kevin neighbor-fn))))
@@ -135,7 +135,7 @@
 (time
 (let [d (-> system :db :conn db)
       d (d/filter d (without-documentaries d))
-      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      kevin (d/entid d [:actor/name "Bacon, Kevin (I)"])
       neighbor-fn (partial neighbors d)]
   (->> (degrees-of-separation kevin neighbor-fn :up-to 15)
        (reduce-kv (fn [m k v]
@@ -170,8 +170,8 @@
 
 ;; using path from rule
 (let [d (-> system :db :conn db)
-      clay (actor-name->eid d "Barth, Clayton")
-      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      clay (d/entid d [:actor/name "Barth, Clayton"])
+      kevin (d/entid d [:actor/name "Bacon, Kevin (I)"])
       ename  (partial actor-or-movie-name d)]
   (time (map first
              (q '[:find ?path
@@ -179,7 +179,6 @@
                   :where
                   (acted-with-3 ?actor ?target ?path)]
                 d acted-with-rules clay kevin))))
-
 
 ;; export movies and actors
 (let [d (-> system :db :conn db)
@@ -191,8 +190,8 @@
 
 ;; quick n dirty profiling
 (let [d (-> system :db :conn db)
-      clay (actor-name->eid d "Barth, Clayton")
-      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      clay (d/entid d [:actor/name "Barth, Clayton"])
+      kevin (d/entid d [:actor/name "Bacon, Kevin (I)"])
       neighbor-fn (partial neighbors d)]
   (time (dotimes [_ 50]
           (bidirectional-bfs clay kevin neighbor-fn))))

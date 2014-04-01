@@ -5,7 +5,7 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [datomic.api :as d :refer [q db]]
-            [kevin.core :refer [actor-name->eid eids-with-attr-val]]
+            [kevin.core :refer [eids-with-attr-val]]
             [kevin.system :as system]))
 
 (def conn nil)
@@ -99,7 +99,7 @@
 (defn actor-tx-data
   ([a] (actor-tx-data (db conn) a))
   ([d {:keys [actor movies]}]
-    (when-not (actor-name->eid d actor)
+    (when-not (d/entid d [:actor/name actor])
       (let [actor-id  (d/tempid :db.part/user)
             movie-txs (map (fn [m] {:movie/title m
                                 :db/id (d/tempid :db.part/user)
