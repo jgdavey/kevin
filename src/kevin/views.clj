@@ -51,7 +51,7 @@
 
 (def ^:dynamic *result-sel* [:.result_list :> [:ul (nth-of-type 1)] :> [:li (nth-of-type 1)]])
 
-(defn simple-escape [text]
+(defn simple-escape [^String text]
   (.. text (replace " " "+") (replace "&" "%26")))
 
 (defn- imdb-link [{:keys [name type]}]

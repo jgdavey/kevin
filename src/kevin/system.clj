@@ -39,12 +39,10 @@
 (defn- setup-handler [system]
   (let [web-opts (:web system)
         handler (handler/app system)]
-    (-> system
-        (assoc-in [:web :handler] handler))))
+    (assoc-in system [:web :handler] handler)))
 
 (defn- teardown-handler [system]
-  (-> system
-      (assoc-in [:web :handler] nil)))
+  (assoc-in system [:web :handler] nil))
 
 (defn system
   "Returns a new instance of the whole application."

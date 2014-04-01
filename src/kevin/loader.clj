@@ -43,7 +43,7 @@
       (.. line (substring 0 tab) trim))))
 
 (defn extract-year [^String movie-title]
-  (if-let [year (last (re-find #"\((\d\d\d\d).*\)$" movie-title))]
+  (if-let [^String year (last (re-find #"\((\d\d\d\d).*\)$" movie-title))]
     (Integer. year)))
 
 (defn add-year [title]
@@ -122,7 +122,7 @@
                [:db/retract actor :actor/movies movie])))))
 
 (defn parse-genre [db ^String line]
-  (let [[title genre] (map #(.trim %) (clojure.string/split line #"\t+"))]
+  (let [[title genre] (map #(.trim ^String %) (clojure.string/split line #"\t+"))]
     (when-let [g (genres genre)]
       {:db/id (d/tempid :db.part/user)
        :movie/title title
@@ -145,14 +145,14 @@
       (store-movies batch))
     (println "done")))
 
-(defn extract-role [role-line]
+(defn extract-role [^String role-line]
   (let [paren (. role-line (indexOf ")"))]
     (.. role-line (substring 0 (inc paren)) trim)))
 
 (defn extract-potential-roles [[actor-line & role-lines]]
   (let [[actor title & rest] (clojure.string/split actor-line #"\t+")]
     {:actor actor
-     :movies (map #(.trim %) (conj role-lines title))}))
+     :movies (map #(.trim ^String %) (conj role-lines title))}))
 
 (defn parse-actor [lines]
   (let [{actor :actor potential-roles :movies} (extract-potential-roles lines)
