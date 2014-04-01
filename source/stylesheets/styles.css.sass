@@ -39,26 +39,14 @@ $red: #f92116
   font-weight: $weight
 
 = blurry($color: #000, $size: 4)
-  color: transparentize($color, .6)
-  @if $size > 2
-    text-shadow: 0 0 #{$size}px $color, 0 0 2px $color
-  @else
-    text-shadow: 0 0 #{$size}px $color
-  +retina
-    color: transparent
-    text-shadow: 0 0 1px $color
+  color: $color
+  -webkit-mask-image: url("/images/kevin_bg_2.png")
+  -webkit-mask-repeat: repeat
+  opacity: .9
 
 = underline-hover
-  position: relative
-  &:hover:after
-    content: ''
-    position: absolute
-    bottom: 0
-    left: 0
-    right: 0
-    height: 1px
-    background: #32b554
-    box-shadow: 0 0 2px #32b554
+  &:hover
+    text-decoration: underline
 
 body
   color: #000
@@ -67,6 +55,15 @@ body
   padding-bottom: 50px
   -webkit-font-smoothing: antialiased
   -webkit-text-size-adjust: none
+  > footer
+    font-size: 16px
+    +sans(normal)
+    text-align: center
+    padding: 80px 20px 40px 20px
+    p
+      margin: 0 0 10px 0
+    a
+      color: $red
 
 a
   text-decoration: none
@@ -109,7 +106,6 @@ h2
   +blurry($red, 3)
   font-size: 40px
   margin: 0 0 80px 0
-  line-height: 100%
   +tablet
     margin-bottom: 60px
   +mobile
@@ -251,7 +247,6 @@ form
           margin-left: 15px
   .result_list
     font-size: 26px
-    +blurry($size: 2)
     opacity: .95
     +mobile
       font-size: 22px
@@ -271,7 +266,6 @@ form
           width: 20px
           margin: 0 auto
           opacity: .9
-          +blurry($size: 2)
           top: -30px
         +mobile
           padding: 15px 0
@@ -287,17 +281,17 @@ form
                 margin: 0 5px
             &:first-of-type,
             &:last-of-type
-              +blurry(#32b554, 2)
+              color: #32b554
             &.actor:first-of-type + .movie
               &:before
                 content: "←"
-                +blurry(#32b554, 2)
+                color: #32b554
               ~ .movie,
               ~ .actor
                 &:before
                   content: "↔"
-                  +blurry($size: 2)
+                  color: #32b554
               ~ .actor:last-of-type
                 &:before
                   content: "→"
-                  +blurry(#32b554, 2)
+                  color: #32b554
