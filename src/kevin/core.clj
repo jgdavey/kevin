@@ -21,20 +21,23 @@
      [?e1 :actor/movies ?m]
      [?e2 :actor/movies ?m]
      [(!= ?e1 ?e2)]
-     [(vector ?e1 ?m) ?path]]
+     [(vector ?e1 ?m ?e2) ?path]]
     [(acted-with-1 ?e1 ?e2 ?path)
      (acted-with ?e1 ?e2 ?path)]
     [(acted-with-2 ?e1 ?e2 ?path)
-     (acted-with ?e1 ?x ?p1)
+     (acted-with ?e1 ?x ?pp)
      (acted-with ?x ?e2 ?p2)
+     [(butlast ?pp) ?p1]
      [(concat ?p1 ?p2) ?path]]
     [(acted-with-3 ?e1 ?e2 ?path)
-     (acted-with-2 ?e1 ?x ?p1)
+     (acted-with-2 ?e1 ?x ?pp)
      (acted-with ?x ?e2 ?p2)
+     [(butlast ?pp) ?p1]
      [(concat ?p1 ?p2) ?path]]
     [(acted-with-4 ?e1 ?e2 ?path)
-     (acted-with-3 ?e1 ?x ?p1)
+     (acted-with-3 ?e1 ?x ?pp)
      (acted-with ?x ?e2 ?p2)
+     [(butlast ?pp) ?p1]
      [(concat ?p1 ?p2) ?path]]])
 
 (defn actor-or-movie-name [db eid]
@@ -146,6 +149,7 @@
     (fn [db ^Datom datom]
       (not (or (has-documentaries? db datom)
                (is-documentary? (d/entity db (.e datom))))))))
+
 (defn find-id-paths [db source target]
   (let [filt (without-documentaries db)
         fdb (d/filter db filt)]

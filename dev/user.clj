@@ -162,25 +162,23 @@
       actor-name (partial eid->actor-name d)]
   (time (map (partial map actor-name)
               (q '[:find ?actor ?m1 ?m2 ?target
-                          :in $ % ?actor ?target
-                          :where (acted-with ?actor ?m1 _)
-                          (acted-with ?m1 ?m2 _)
-                          (acted-with ?m2 ?target _)]
-                        d acted-with-rules clay kevin))))
+                   :in $ % ?actor ?target
+                   :where (acted-with ?actor ?m1 _)
+                   (acted-with ?m1 ?m2 _)
+                   (acted-with ?m2 ?target _)]
+                 d acted-with-rules clay kevin))))
 
 ;; using path from rule
-(def from-path
-  (let [d (-> system :db :conn db)
-        clay (actor-name->eid d "Barth, Clayton")
-        kevin (actor-name->eid d "Bacon, Kevin (I)")
-        ename  (partial actor-or-movie-name d)]
-    (time (set (map (fn [[p]] (concat p (list kevin)))
-                  (q '[:find ?path
-                      :in $ % ?actor ?target
-                      :where
-                      (acted-with-3 ?actor ?target ?path)]
-                    d acted-with-rules clay kevin)))))
-  )
+(let [d (-> system :db :conn db)
+      clay (actor-name->eid d "Barth, Clayton")
+      kevin (actor-name->eid d "Bacon, Kevin (I)")
+      ename  (partial actor-or-movie-name d)]
+  (time (map first
+             (q '[:find ?path
+                  :in $ % ?actor ?target
+                  :where
+                  (acted-with-3 ?actor ?target ?path)]
+                d acted-with-rules clay kevin))))
 
 
 ;; export movies and actors
