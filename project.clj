@@ -5,10 +5,11 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.nrepl "0.2.3"]
+                 [commons-codec "1.6"]
                  [hiccup "1.0.5"]
                  [enlive "1.1.5"]
                  [environ "0.4.0"]
-                 [lib-noir "0.8.1"]
+                 [lib-noir "0.8.1" :exclusions [org.clojure/core.cache ring]]
                  [ring-server "0.3.1"]
                  [compojure "1.1.6"]]
   :plugins [[lein-ring "0.8.10"]
@@ -20,7 +21,8 @@
          :destroy kevin.system/destroy }
   :profiles {:production
              {:ring {:open-browser? false :stacktraces? false :auto-reload? false}
-              :dependencies [[com.datomic/datomic-pro "0.9.4699"]]}
+              :dependencies [[com.datomic/datomic-pro "0.9.4699"]
+                             [ring "1.2.1" :exclusions [ring/ring-devel]]]}
              :dev {:source-paths ["dev"]
                    :dependencies [[com.datomic/datomic-free "0.9.4699"]
                                   [org.clojure/tools.namespace "0.2.4"]
