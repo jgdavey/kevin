@@ -76,17 +76,17 @@
   [path]
   [:ul] (content (map result-node path)))
 
-(defn paths-count [paths bacon-number]
-  (let [total (str paths " path" (when-not (= 1 paths) "s"))
-        degrees (str bacon-number " degree" (when-not (= 1 bacon-number) "s"))]
-    (str total " with " degrees " of separation")))
+(defn degrees-description [bacon-number]
+  (let [degrees (str bacon-number " degree" (when-not (= 1 bacon-number) "s"))]
+    (str "(with " degrees " of separation)")))
 
 (defsnippet results "templates/results.html" [:#results]
   [{:keys [paths total start end bacon-number]}]
   [:.result_list :> [:ul (html/but first-of-type)]] nil
   [:.result_list :> [:ul first-of-type]] (clone-for [path paths]
                                                     (content (result path)))
-  [:.result_list :> :h3] (content (paths-count total bacon-number))
+  [:.result_list :> :h3] (content (str (count paths) " path" (when-not (= 1 (count paths)) "s")))
+  [:.result_list :> :h4] (content (degrees-description bacon-number))
   [:.bacon_number :mark] (content (str bacon-number))
   [:.bacon_number [:p first-of-type]] (content (format-name start))
   [:.bacon_number [:p last-of-type]] (content (format-name end)))
