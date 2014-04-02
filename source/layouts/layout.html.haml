@@ -6,19 +6,19 @@
     %meta(name="viewport" content="width=device-width, initial-scale=1")
     %title= current_page.data.title || "Kevin Bacon"
     = stylesheet_link_tag "styles"
-    = javascript_include_tag  "all"
     %link(href='http://fonts.googleapis.com/css?family=Old+Standard+TT:400italic' rel='stylesheet' type='text/css')
     %link(href='http://fonts.googleapis.com/css?family=Alegreya+Sans:800italic' rel='stylesheet' type='text/css')
     %link(href='http://fonts.googleapis.com/css?family=Dancing+Script' rel='stylesheet' type='text/css')
+    = javascript_include_tag  "all"
   %body{class: page_classes}
     #container
-      %h1= link_to "Kevin Bacon", "#"
-      %h2= link_to "find any old bacon number", "#"
+      %h1= link_to "Kevin Bacon", "/"
+      %h2= link_to "find any old bacon number", "/"
       = yield
     %footer
       :markdown
-        Created by [Joshua Davey](http://twitter.com/joshuadavey) in (put complicated stuff here)
+        Created by [@joshuadavey](http://twitter.com/joshuadavey) with Clojure and Datomic
 
         Design by [@camerondaigle](http://twitter.com/camerondaigle)
 
-        Information courtesy of [IMDB](http://imdb.com) . Used with permission.
+        Information courtesy of [IMDb](http://www.imdb.com). Used with permission.
