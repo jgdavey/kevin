@@ -22,7 +22,7 @@
   [& {:keys [body title]}]
   [:head :title] (content (str/join " - "
                                     (filter identity [title "Kevin Bacon"])))
-  [:#container :> :h1 :a] (set-attr :href "/")
+  [:#container :> #{:h1 :h2} :a] (set-attr :href "/")
   [:#container :ul] (substitute body))
 
 (defsnippet form "templates/search_form.html" [:#container :form]
