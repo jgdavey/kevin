@@ -38,7 +38,7 @@ $red: #f92116
   font-family: "Alegreya Sans", $fallback
   font-weight: $weight
 
-= blurry($color: #000, $size: 4)
+= noise($color: #000)
   color: $color
   -webkit-mask-image: url("/images/kevin_bg_2.png")
   -webkit-mask-repeat: repeat
@@ -87,7 +87,7 @@ h1
   a
     display: block
     +script
-    +blurry($red)
+    +noise($red)
     font-size: 130px
     line-height: 100%
     margin: 80px 0 0 0
@@ -95,7 +95,7 @@ h1
       font-size: 80px
     +max-width(480)
       font-size: 60px
-      +blurry($red, 3)
+      +noise($red)
     +tablet
       margin-top: 60px
     +mobile
@@ -105,23 +105,25 @@ h1
 h2  
   text-align: center
   +script
-  +blurry($red, 3)
+  +noise($red)
   font-size: 40px
   margin: 0 0 80px 0
   +tablet
     margin-bottom: 60px
   +mobile
     margin-bottom: 40px
-    font-size: 30px
-    +blurry($red, 2)
+    font-size: 26px
+    +noise($red)
 
 form
   text-align: center
   dd
     margin: 0 0 40px 0
+    +mobile
+      margin-bottom: 20px
   label
     +sans
-    +blurry($size: 2)
+    +noise
     margin: 0 0 5px 0
     text-transform: uppercase
     display: block
@@ -134,7 +136,7 @@ form
     +script
     font-size: 40px
     line-height: 60px
-    +blurry($red, 2)
+    +noise($red)
     padding: 5px 0
     text-align: center
     border-radius: 200px
@@ -145,12 +147,14 @@ form
       outline: none
       background: transparentize(#ffebc7, .3)
       box-shadow: 0 0 5px 3px transparentize(#ffebc7, .3), inset 0 0 8px 0 #dfdbb7, 0 0 4px 0 #dfdbb7
+    +mobile
+      font-size: 30px
+      line-height: 45px
   input[type='submit']
     background: url("/images/bg_grey.gif")
-    box-shadow: inset 0 0 2px 2px #fffffe
     border: 0
-    +blurry(#000, 5)
     +sans
+    +noise
     font-style: italic
     text-transform: uppercase
     outline: none
@@ -160,8 +164,7 @@ form
     letter-spacing: 6px
     border-radius: 200px
     +transition(padding .1s)
-    &:hover
-      +blurry(#000, 3)
+    background-size: 44px 37px
     &:active
       position: relative
       top: 1px
@@ -171,7 +174,7 @@ form
 #disambiguate
   text-align: center
   font-size: 26px
-  +blurry($size: 2)
+  +noise
   opacity: .95
   +mobile
     font-size: 22px
@@ -187,7 +190,7 @@ form
           margin: 0 5px
       a
         +sans(normal)
-        +blurry($size: 2px)
+        +noise
         +underline-hover
 
 #results
@@ -197,7 +200,7 @@ form
     font-style: italic
     text-align: center
     text-transform: uppercase
-    +blurry($size: 2)
+    +noise
     font-size: 30px
     letter-spacing: 10px
     +mobile
@@ -207,7 +210,7 @@ form
     text-align: center
     font-style: italic
     margin: 0 0 50px 0
-    +blurry($size: 2)
+    +noise
     font-size: 20px
     +mobile
       margin-bottom: 15px
@@ -222,7 +225,7 @@ form
       color: $red
       font-size: 40px
       text-transform: uppercase
-      +blurry($red, 3)
+      +noise($red)
       letter-spacing: 2px
       line-height: 140%
       +mobile
@@ -231,7 +234,7 @@ form
       +numeral
       font-size: 150px
       line-height: 100%
-      +blurry
+      +noise
       display: inline-block
       &:before,
       &:after
