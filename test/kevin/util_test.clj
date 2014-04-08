@@ -3,7 +3,8 @@
         [kevin.util]))
 
 (deftest test-format-query
-  (is (= "+J* +Digg*" (format-query "J Digg"))))
+  (is (= "+J* +Digg*" (format-query "J Digg")))
+  (is (= "+J* +Digg* +\\(I\\)*" (format-query "J Digg (I)"))))
 
 (deftest test-format-name
   (are [x y] (= (format-name x) y)
