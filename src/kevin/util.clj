@@ -2,6 +2,12 @@
   (:require [clojure.string :refer [split join] :as str])
   (:import [com.datomic.lucene.queryParser QueryParser]))
 
+(defn- tokenize-query [q]
+  (let [escaped (QueryParser/escape q)]
+    (if (= q escaped)
+      (str "+" escaped "*")
+      (str "+" escaped))))
+
 (defn format-query
   "Makes each word of query required, front-stemmed.
    Escapes all special characters.
@@ -12,9 +18,9 @@
   This maps to Lucene's QueryParser.parse
   See http://lucene.apache.org/core/3_6_1/api/core/org/apache/lucene/queryParser/QueryParser.html"
   [query]
-  (->> (split (QueryParser/escape query) #",?\s+")
+  (->> (split query #",?\s+")
        (remove str/blank?)
-       (map #(str "+" % "*"))
+       (map tokenize-query)
        (join " ")))
 
 (defn format-name [name]
