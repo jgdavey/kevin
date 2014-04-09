@@ -99,7 +99,7 @@
 (defn actor-tx-data
   ([a] (actor-tx-data (db conn) a))
   ([d {:keys [actor movies]}]
-    (when-not (d/entid d [:actor/name actor])
+    (when-not (d/entid d [:person/name actor])
       (let [actor-id  (d/tempid :db.part/user)
             movie-txs (map (fn [m] {:movie/title m
                                 :db/id (d/tempid :db.part/user)

@@ -69,7 +69,7 @@
   [db query]
   (if (str/blank? query)
     #{}
-    (if-let [eid (d/entid db [:actor/name query])]
+    (if-let [eid (d/entid db [:person/name query])]
       [{:name query :actor-id eid}]
       (mapv #(zipmap [:actor-id :name] %)
             (q '[:find ?e ?name
