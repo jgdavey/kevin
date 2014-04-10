@@ -67,6 +67,7 @@
 
     @(d/transact conn (map tx-fn actors))
     (kevin.loader/add-years-to-movies conn)
+    (d/request-index conn)
     :ok))
 
 (comment
