@@ -121,16 +121,18 @@
         (map (fn [[actor movie]]
                [:db/retract actor :actor/movies movie])))))
 
-(defn parse-genre [db ^String line]
-  (let [[title genre] (map #(.trim ^String %) (clojure.string/split line #"\t+"))]
+(defn parse-genre [^String line]
+  (map #(.trim ^String %) (clojure.string/split line #"\t+")))
+
+(defn genre-tx [line]
+  (let [[title genre] (parse-genre line)]
     (when-let [g (genres genre)]
       {:db/id (d/tempid :db.part/user)
        :movie/title title
        :movie/genre g})))
 
 (defn parse-genres [lines]
-  (let [db (db conn)
-        tx-data (filter identity (map (partial parse-genre db) (filter movie-line? lines)))]
+  (let [tx-data (filter identity (map genre-tx (filter movie-line? lines)))]
      (doseq [batch (partition-all *batch-size* tx-data)]
        (print ".")
        (flush)
@@ -218,6 +220,68 @@
           (if (:header state)
             (recur lines { :header (not= line start-at) })
             (parser lines))))))
+
+(defn ensure-transformed-movies [file out]
+  (when-not (.exists (io/as-file out))
+    (with-open [in (io/reader
+                     (java.util.zip.GZIPInputStream. (io/input-stream file))
+                     :encoding "ISO-8859-1")
+                out (io/writer out)]
+      (loop [[line & lines] (drop-while #(not= % "MOVIES LIST") (line-seq in))]
+        (when line
+          (when (movie-line? line)
+            (when-let [title (movie-title line)]
+              (.write out title)
+              (.newLine out)))
+          (recur lines))))))
+
+(defn ensure-transformed-actors [file out & {:keys [start-at]}]
+  (when-not (.exists (io/as-file out))
+    (with-open [in (io/reader
+                     (java.util.zip.GZIPInputStream. (io/input-stream file))
+                     :encoding "ISO-8859-1")
+                out (io/writer out)]
+      (loop [lines (drop 3 (drop-while #(not= % start-at) (line-seq in)))]
+        (let [[actor-lines lines] (split-with (complement empty?) (rest lines))]
+          (when (seq actor-lines)
+            (when-let [actor-data (try (parse-actor actor-lines) (catch Throwable t nil))]
+              (let [{:keys [actor movies]} actor-data]
+                (doseq [movie movies]
+                  (doto out
+                    (.write actor)
+                    (.write char-tab)
+                    (.write movie)
+                    (.newLine)))))
+            (recur lines)))))))
+
+(defn ensure-transformed-genres [file out]
+  (when-not (.exists (io/as-file out))
+    (with-open [in (io/reader
+                     (java.util.zip.GZIPInputStream. (io/input-stream file))
+                     :encoding "ISO-8859-1")
+                out (io/writer out)]
+      (loop [[line & lines] (drop 3 (drop-while #(not= % "8: THE GENRES LIST") (line-seq in)))]
+        (when line
+          (when (movie-line? line)
+            (let [[title genre] (parse-genre line)]
+              (doto out
+                (.write title)
+                (.write char-tab)
+                (.write genre)
+                (.newLine ))))
+          (recur lines))))))
+
+(defn load-movies []
+  (ensure-transformed-movies "data/movies.list.gz" "data/movies.transformed"))
+
+(defn load-actors []
+  (ensure-transformed-actors "data/actors.list.gz" "data/actors.transformed" :start-at "THE ACTORS LIST"))
+
+(defn load-actresses []
+  (ensure-transformed-actors "data/actresses.list.gz" "data/actresses.transformed" :start-at "THE ACTRESSES LIST"))
+
+(defn load-genres []
+  (ensure-transformed-genres "data/genres.list.gz" "data/genres.transformed"))
 
 (defn -main [& args]
   (let [system (system/start (system/system))]
