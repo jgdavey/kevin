@@ -221,55 +221,56 @@
             (recur lines { :header (not= line start-at) })
             (parser lines))))))
 
-(defn ensure-transformed-movies [file out]
-  (when-not (.exists (io/as-file out))
-    (with-open [in (io/reader
-                     (java.util.zip.GZIPInputStream. (io/input-stream file))
-                     :encoding "ISO-8859-1")
-                out (io/writer out)]
-      (loop [[line & lines] (drop-while #(not= % "MOVIES LIST") (line-seq in))]
-        (when line
-          (when (movie-line? line)
-            (when-let [title (movie-title line)]
-              (.write out title)
-              (.newLine out)))
+
+(defmacro ensure-transformed-file
+  "in and out are bound for you"
+  [[file outfile] & body]
+  `(when-not (.exists (io/as-file ~outfile))
+     (with-open [~'in (io/reader
+                      (java.util.zip.GZIPInputStream. (io/input-stream ~file))
+                      :encoding "ISO-8859-1")
+                 ~'out (io/writer ~outfile)]
+       ~@body)))
+
+(defn ensure-transformed-movies [file outfile]
+  (ensure-transformed-file [file outfile]
+    (loop [[line & lines] (drop-while #(not= % "MOVIES LIST") (line-seq in))]
+      (when line
+        (when (movie-line? line)
+          (when-let [title (movie-title line)]
+            (doto out
+              (.write title)
+              (.newLine))))
+        (recur lines)))))
+
+(defn ensure-transformed-actors [file outfile & {:keys [start-at]}]
+  (ensure-transformed-file [file outfile]
+    (loop [lines (drop 3 (drop-while #(not= % start-at) (line-seq in)))]
+      (let [[actor-lines lines] (split-with (complement empty?) (rest lines))]
+        (when (seq actor-lines)
+          (when-let [actor-data (try (parse-actor actor-lines) (catch Throwable t nil))]
+            (let [{:keys [actor movies]} actor-data]
+              (doseq [movie movies]
+                (doto out
+                  (.write actor)
+                  (.write char-tab)
+                  (.write movie)
+                  (.newLine)))))
           (recur lines))))))
 
-(defn ensure-transformed-actors [file out & {:keys [start-at]}]
-  (when-not (.exists (io/as-file out))
-    (with-open [in (io/reader
-                     (java.util.zip.GZIPInputStream. (io/input-stream file))
-                     :encoding "ISO-8859-1")
-                out (io/writer out)]
-      (loop [lines (drop 3 (drop-while #(not= % start-at) (line-seq in)))]
-        (let [[actor-lines lines] (split-with (complement empty?) (rest lines))]
-          (when (seq actor-lines)
-            (when-let [actor-data (try (parse-actor actor-lines) (catch Throwable t nil))]
-              (let [{:keys [actor movies]} actor-data]
-                (doseq [movie movies]
-                  (doto out
-                    (.write actor)
-                    (.write char-tab)
-                    (.write movie)
-                    (.newLine)))))
-            (recur lines)))))))
+(defn ensure-transformed-genres [file outfile]
+  (ensure-transformed-file [file outfile]
+    (loop [[line & lines] (drop 3 (drop-while #(not= % "8: THE GENRES LIST") (line-seq in)))]
+      (when line
+        (when (movie-line? line)
+          (let [[title genre] (parse-genre line)]
+            (doto out
+              (.write title)
+              (.write char-tab)
+              (.write genre)
+              (.newLine))))
+        (recur lines)))))
 
-(defn ensure-transformed-genres [file out]
-  (when-not (.exists (io/as-file out))
-    (with-open [in (io/reader
-                     (java.util.zip.GZIPInputStream. (io/input-stream file))
-                     :encoding "ISO-8859-1")
-                out (io/writer out)]
-      (loop [[line & lines] (drop 3 (drop-while #(not= % "8: THE GENRES LIST") (line-seq in)))]
-        (when line
-          (when (movie-line? line)
-            (let [[title genre] (parse-genre line)]
-              (doto out
-                (.write title)
-                (.write char-tab)
-                (.write genre)
-                (.newLine ))))
-          (recur lines))))))
 
 (defn load-movies []
   (ensure-transformed-movies "data/movies.list.gz" "data/movies.transformed"))
