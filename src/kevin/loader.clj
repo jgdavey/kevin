@@ -4,6 +4,7 @@
   folder. You can then run `lein run -m kevin.loader`"
   (:gen-class)
   (:require [clojure.java.io :as io]
+            [clojure.core.async :as async :refer [chan go >! <! close!]]
             [datomic.api :as d :refer [q db]]
             [kevin.core :refer [eids-with-attr-val]]
             [kevin.system :as system]))
@@ -82,44 +83,34 @@
     (= -1 (.indexOf line "(unconfirmed)"))
     (= -1 (.indexOf line "(archival"))))
 
-(defn split-by [pred coll]
-  (let [remove-sep (fn [el] ((complement pred) (first el)))]
-    (filter remove-sep (partition-by pred coll))))
+(defn movie-tx [^String title]
+  (let [tx {:db/id (d/tempid :db.part/user)
+            :movie/title title}]
+    (if-let [year (extract-year title)]
+      (assoc tx :movie/year year)
+      tx)))
 
-(defn store-movies [batch]
-  (let [titles (map (fn [b]
-                      (let [tx {:db/id (d/tempid :db.part/user)
-                                :movie/title b}]
-                        (if-let [year (extract-year b)]
-                          (assoc tx :movie/year year)
-                          tx)))
-                    batch)]
-    @(d/transact conn titles)))
+(defn actor-movie-tx [actor-id title]
+  {:movie/title title
+   :db/id (d/tempid :db.part/user)
+   :actor/_movies actor-id})
 
-(defn actor-tx-data
-  ([a] (actor-tx-data (db conn) a))
-  ([d {:keys [actor movies]}]
-    (when-not (d/entid d [:person/name actor])
-      (let [actor-id  (d/tempid :db.part/user)
-            movie-txs (map (fn [m] {:movie/title m
-                                :db/id (d/tempid :db.part/user)
-                                :actor/_movies actor-id
-                                }) movies)
-            actor-tx  { :db/id actor-id, :person/name actor }]
-      (concat [actor-tx] movie-txs)))))
+(defn actor-tx [tuples]
+  (let [actor-id (d/tempid :db.part/user)]
+    (concat [{:db/id actor-id :person/name (ffirst tuples)}]
+            (map (fn [[_ movie]]
+                   (actor-movie-tx actor-id movie)) tuples))))
 
-(defn retract-roles
-  ([a] (actor-tx-data (db conn) a))
-  ([d {:keys [actor movies]}]
-   (->> (q '[:find ?actor ?movie
-             :in $ ?name [?title ...]
-             :where
-             [?actor :person/name ?name]
-             [?actor :actor/movies ?movie]
-             [?movie :movie/title ?title]]
-           d actor movies)
-        (map (fn [[actor movie]]
-               [:db/retract actor :actor/movies movie])))))
+(defn retract-roles [d {:keys [actor movies]}]
+  (->> (q '[:find ?actor ?movie
+            :in $ ?name [?title ...]
+            :where
+            [?actor :person/name ?name]
+            [?actor :actor/movies ?movie]
+            [?movie :movie/title ?title]]
+          d actor movies)
+       (map (fn [[actor movie]]
+              [:db/retract actor :actor/movies movie]))))
 
 (defn parse-genre [^String line]
   (map #(.trim ^String %) (clojure.string/split line #"\t+")))
@@ -130,22 +121,6 @@
       {:db/id (d/tempid :db.part/user)
        :movie/title title
        :movie/genre g})))
-
-(defn parse-genres [lines]
-  (let [tx-data (filter identity (map genre-tx (filter movie-line? lines)))]
-     (doseq [batch (partition-all *batch-size* tx-data)]
-       (print ".")
-       (flush)
-       @(d/transact-async conn (doall batch)))
-    :ok))
-
-(defn parse-movies [lines]
-  (let [titles (filter identity (map movie-title (filter movie-line? lines)))]
-    (doseq [batch (partition-all *batch-size* titles)]
-      (print ".")
-      (flush)
-      (store-movies batch))
-    (println "done")))
 
 (defn extract-role [^String role-line]
   (let [paren (. role-line (indexOf ")"))]
@@ -162,65 +137,6 @@
         movies (filter identity roles)]
     (when (and (seq movies) actor)
       { :actor actor :movies movies })))
-
-(defn actors-and-roles
-  ([lines]
-   (actors-and-roles lines parse-actor))
-  ([lines parse-fn]
-   (->> lines
-        (drop 3)
-        (split-by empty?)
-        (filter identity)
-        (map parse-fn)
-        (filter identity))))
-
-(defn parse-bogus-roles [lines]
-  (let [{actor :actor potential-roles :movies} (extract-potential-roles lines)
-        roles (map extract-role (filter #(and (role-line? %) (not (legit-role? %))) potential-roles))
-        movies (filter identity roles)]
-    (when (and (seq movies) actor)
-      { :actor actor :movies movies })))
-
-(defn retract-bogus-roles [lines]
-  (try
-    (let [actor-roles (actors-and-roles lines parse-bogus-roles)]
-      (doseq [batch (partition-all *batch-size* actor-roles)]
-        (let [d (db conn)
-              tx (mapcat (partial retract-roles d) batch)]
-          (if (empty? tx)
-            (print "-")
-            (do (d/transact-async conn tx)
-                (print "."))))
-        (flush)))
-    (catch Exception e))
-  (println "done"))
-
-(defn parse-actors [lines]
-  (try
-    (let [actor-roles (actors-and-roles lines)]
-      (doseq [batch (partition-all *batch-size* actor-roles)]
-        (let [d (db conn)
-              tx (mapcat (partial actor-tx-data d) batch)]
-          (if (empty? tx)
-            (print "-")
-            (do (d/transact-async conn tx)
-                (print "."))))
-        (flush)))
-    (catch Exception e))
-  (println "done"))
-
-(defn load-file-with-parser
-  [file parser & {:keys [start-at]}]
-  (with-open [in (io/reader
-                   (java.util.zip.GZIPInputStream. (io/input-stream file))
-                   :encoding "ISO-8859-1")]
-      (let [lines (line-seq in)]
-        (loop [[line & lines] lines
-              state { :header true }]
-          (if (:header state)
-            (recur lines { :header (not= line start-at) })
-            (parser lines))))))
-
 
 (defmacro ensure-transformed-file
   "in and out are bound for you"
@@ -271,28 +187,117 @@
               (.newLine))))
         (recur lines)))))
 
+(defn batch
+  "Returns a channel that batches entries from in"
+  [in timeout-ms]
+  (let [inner (chan 1)
+        splitter? (partial identical? ::split)
+        proc (go (loop [t (async/timeout timeout-ms)]
+                   (let [[v c] (async/alts! [t in])]
+                     (condp identical? c
+                       t (do (>! inner ::split)
+                             (recur (async/timeout timeout-ms)))
+                       in (if (nil? v)
+                            (close! inner)
+                            (do (>! inner v)
+                                (recur t)))))))
+        out (->> (async/partition-by splitter? inner)
+                 (async/remove< (comp splitter? first)))]
+    out))
+
+(defn transact-all
+  "Returns a chan"
+  [tx-chan transact n]
+  (let [procs (map (fn [_] (go (loop []
+                                 (when-let [batch (<! tx-chan)]
+                                   (print ".")
+                                   (flush)
+                                   (transact batch)
+                                   (recur)))))
+                   (range n))
+        control-chan (async/merge procs)]
+    (go (while (<! control-chan) true))))
 
 (defn load-movies []
-  (ensure-transformed-movies "data/movies.list.gz" "data/movies.transformed"))
+  (ensure-transformed-movies "data/movies.list.gz" "data/movies.transformed")
+  (let [work-chan    (chan 128)
+        tx-data-chan (chan 1)
+        tx-chan (batch tx-data-chan 50)
+        control-chan (transact-all tx-chan (comp deref (partial d/transact conn)) 4)]
+    (dotimes [i 8]
+      (go (loop []
+            (if-let [line (<! work-chan)]
+              (do
+                (>! tx-data-chan (movie-tx line))
+                (recur))
+              (close! tx-data-chan)))))
+    (with-open [file (io/reader "data/movies.transformed")]
+      (doseq [line (line-seq file)]
+        (async/>!! work-chan line)))
+    (close! work-chan)
+    (async/<!! control-chan)))
+
+(defn load-actors-from [file]
+  (let [line-chan  (chan 128)
+        actor-chan (async/partition-by first line-chan)
+        tx-chan (chan 1)
+        batched-tx-chan (batch tx-chan 50)
+        control-chan (transact-all batched-tx-chan
+                                   (fn [batch]
+                                     @(d/transact conn (apply concat batch)))
+                                   4)]
+    (dotimes [i 8]
+      (go (loop []
+            (if-let [lines (<! actor-chan)]
+              (do
+                (>! tx-chan (actor-tx lines))
+                (recur))
+              (close! tx-chan)))))
+    (with-open [file (io/reader file)]
+      (doseq [line (line-seq file)]
+        (async/>!! line-chan (clojure.string/split line #"\t+"))))
+    (close! line-chan)
+    (async/<!! control-chan)))
 
 (defn load-actors []
-  (ensure-transformed-actors "data/actors.list.gz" "data/actors.transformed" :start-at "THE ACTORS LIST"))
+  (ensure-transformed-actors "data/actors.list.gz" "data/actors.transformed" :start-at "THE ACTORS LIST")
+  (load-actors-from "data/actors.transformed"))
 
 (defn load-actresses []
-  (ensure-transformed-actors "data/actresses.list.gz" "data/actresses.transformed" :start-at "THE ACTRESSES LIST"))
+  (ensure-transformed-actors "data/actresses.list.gz" "data/actresses.transformed" :start-at "THE ACTRESSES LIST")
+  (load-actors-from "data/actresses.transformed"))
 
 (defn load-genres []
-  (ensure-transformed-genres "data/genres.list.gz" "data/genres.transformed"))
+  (ensure-transformed-genres "data/genres.list.gz" "data/genres.transformed")
+  (let [work-chan    (chan 128)
+        tx-data-chan (chan 1)
+        tx-chan (batch tx-data-chan 50)
+        control-chan (transact-all tx-chan (comp deref (partial d/transact conn)) 4)]
+    (dotimes [i 10]
+      (go (loop []
+            (if-let [line (<! work-chan)]
+              (do
+                (when-let [tx (genre-tx line)]
+                  (>! tx-data-chan tx))
+                (recur))
+              (close! tx-data-chan)))))
+    (with-open [file (io/reader "data/genres.transformed")]
+      (doseq [line (line-seq file)]
+        (async/>!! work-chan line)))
+    (close! work-chan)
+    (async/<!! control-chan)))
 
 (defn -main [& args]
   (let [system (system/start (system/system))]
     (alter-var-root #'conn (constantly (:conn (:db system))))
-    (println "Loading movies...")
-    (load-file-with-parser "data/movies.list.gz" parse-movies :start-at "MOVIES LIST")
-    (println "Loading actors...")
-    (load-file-with-parser "data/actors.list.gz" parse-actors :start-at "THE ACTORS LIST")
-    (println "Loading actresses...")
-    (load-file-with-parser "data/actresses.list.gz" parse-actors :start-at "THE ACTRESSES LIST")
-    (println "Loading genres...")
-    (load-file-with-parser "data/genres.list.gz" parse-genres :start-at "8: THE GENRES LIST")
-  ))
+    (time (do
+      (println "\nLoading movies...")
+      (load-movies)
+      (println "\nLoading actors...")
+      (load-actors)
+      (println "\nLoading actresses...")
+      (load-actresses)
+      (println "\nLoading genres...")
+      (load-genres)))
+
+    (system/stop system)))
