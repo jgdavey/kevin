@@ -184,7 +184,7 @@
 ;; export movies and actors
 (let [d (-> system :db :conn db)
       reducer (fn [map [k v]] (assoc map k (conj (get map k []) v)))
-      actor-map (->> (kevin.expunge/actor-names "data/movies-small.list" d)
+      actor-map (->> (kevin.expunge/actor-names "data/movies-small.list.gz" d)
                     (reduce reducer {}))]
     (spit "resources/sample.edn" (with-out-str (pr actor-map))))
 
@@ -205,4 +205,15 @@
        :in $ ?t
        :where [?m :movie/title ?t]
        [?m :movie/genre ?g]] d "Going to Pieces: The Rise and Fall of the Slasher Film (2006)"))
+
+;; Genres and counts
+
+(def genre-counts (let [d (-> system :db :conn db)]
+                    (q '[:find ?g (count ?e)
+                         :in $
+                         :where
+                         [?e :movie/genre ?gid]
+                         [?gid :db/ident ?g]] d)))
+
+(pprint (map (fn [[g c]] [(name g) c]) (sort-by peek genre-counts)))
 )
