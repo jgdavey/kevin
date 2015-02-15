@@ -74,6 +74,24 @@
 
 (reset)
 
+;; movies an actor was in
+(q '[:find [?mn ...]
+     :in $ ?n
+     :where
+     [?e :person/name ?n]
+     [?e :actor/movies ?m]
+     [?m :movie/title ?mn]]
+   (-> system :db :conn db)
+   "Bacon, Kevin (I)")
+
+;; movies an actor with name like query was in
+(q '[:find [(pull ?e [:person/name {:actor/movies [:movie/title]}]) ...]
+     :in $ ?q
+     :where
+     [(fulltext $ :person/name ?q) [[?e ?name]]]]
+   (-> system :db :conn db)
+   "+Bacon +Kevin")
+
 ;; number of movies, total
 (time (q '[:find (count ?e) :where [?e :movie/title]]
           (-> system :db :conn db)))
@@ -216,4 +234,15 @@
                          [?gid :db/ident ?g]] d)))
 
 (pprint (map (fn [[g c]] [(name g) c]) (sort-by peek genre-counts)))
+
+(d/touch (d/entity (-> system :db :conn db) 17592191235171))
+
+(deref (d/transact (-> system :db :conn) [[:db/add 17592191235171 :movie/genre 0]]))
+
+(d/q '[:find ?e ?a ?v
+       :in ?log ?t1 ?t2
+       :where [(tx-ids ?log ?t1 ?t2) [?tx ...]]
+              [(tx-data ?log ?tx) [[?e ?a ?v]]]]
+     (d/log (-> system :db :conn)) #inst "2014-11-11" #inst "2014-11-12")
+
 )

@@ -9,6 +9,8 @@
             [kevin.core :refer [eids-with-attr-val]]
             [kevin.system :as system]))
 
+(System/setProperty "datomic.txTimeoutMsec" "30000") ;; 30 seconds
+
 (def conn nil)
 (def system (system/system))
 (def ^:dynamic *batch-size* 500)
