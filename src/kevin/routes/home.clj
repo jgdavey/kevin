@@ -11,7 +11,7 @@
 (defn home []
   (cache! :home
     (views/main-template
-      :body (views/form "Kevin Bacon" nil nil))))
+      :body (views/form "Kevin Bacon (I)" nil nil))))
 
 (defn- cache-key [search hard-mode]
   (conj (mapv :actor-id (first search)) hard-mode))
