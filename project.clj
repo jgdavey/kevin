@@ -20,7 +20,7 @@
   :ring {:handler kevin.system/handler
          :init kevin.system/init
          :destroy kevin.system/destroy }
-  :profiles {:production
+  :profiles {:uberjar
              {:ring {:open-browser? false :stacktraces? false :auto-reload? false}
               :dependencies [[com.datomic/datomic-pro "0.9.5206" :exclusions [joda-time]]]}
              :dev {:source-paths ["dev" "src"]
