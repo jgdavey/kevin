@@ -221,7 +221,6 @@
     (go (while (<! control-chan) true))))
 
 (defn load-movies []
-  (ensure-transformed-movies "data/movies.list.gz" "data/movies.transformed")
   (let [work-chan    (chan 128)
         tx-data-chan (chan 1)
         tx-chan (batch tx-data-chan 50)
@@ -262,15 +261,12 @@
     (async/<!! control-chan)))
 
 (defn load-actors []
-  (ensure-transformed-actors "data/actors.list.gz" "data/actors.transformed" :start-at "THE ACTORS LIST")
   (load-actors-from "data/actors.transformed"))
 
 (defn load-actresses []
-  (ensure-transformed-actors "data/actresses.list.gz" "data/actresses.transformed" :start-at "THE ACTRESSES LIST")
   (load-actors-from "data/actresses.transformed"))
 
 (defn load-genres []
-  (ensure-transformed-genres "data/genres.list.gz" "data/genres.transformed")
   (let [work-chan    (chan 128)
         tx-data-chan (chan 1)
         tx-chan (batch tx-data-chan 50)
@@ -290,6 +286,11 @@
     (async/<!! control-chan)))
 
 (defn -main [& args]
+  (println "\nTransforming files for faster load...")
+  (ensure-transformed-movies "data/movies.list.gz" "data/movies.transformed")
+  (ensure-transformed-actors "data/actors.list.gz" "data/actors.transformed" :start-at "THE ACTORS LIST")
+  (ensure-transformed-actors "data/actresses.list.gz" "data/actresses.transformed" :start-at "THE ACTRESSES LIST")
+  (ensure-transformed-genres "data/genres.list.gz" "data/genres.transformed")
   (let [system (system/start (system/system))]
     (alter-var-root #'conn (constantly (:conn (:db system))))
     (time (do
