@@ -1,0 +1,7 @@
+{:paths ["src" "resources"],
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/core.cache {:mvn/version "1.0.225"}
+        org.clojure/core.async {:mvn/version "1.6.673"}
+        com.datomic/peer {:mvn/version "1.0.6735"}
+        com.cnuernber/charred {:mvn/version "1.028"}
+        }}

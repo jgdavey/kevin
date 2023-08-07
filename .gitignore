@@ -24,3 +24,4 @@ resources/public/images
 resources/public/stylesheets
 resources/public/javascripts
 resources/templates/*.html
+.cpcache
