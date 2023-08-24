@@ -2,6 +2,8 @@
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/core.cache {:mvn/version "1.0.225"}
         org.clojure/core.async {:mvn/version "1.6.673"}
+        org.clojure/tools.cli {:mvn/version "1.0.219"}
+        com.cognitect/transit-clj {:mvn/version "1.0.333"}
         com.datomic/peer {:mvn/version "1.0.6735"}
         com.cnuernber/charred {:mvn/version "1.028"}
-        }}
+        com.amazonaws/aws-java-sdk-dynamodb {:mvn/version "1.12.358"}}}

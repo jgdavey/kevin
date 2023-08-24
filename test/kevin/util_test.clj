@@ -1,10 +1,12 @@
 (ns kevin.util-test
-  (:use [clojure.test]
-        [kevin.util]))
+  (:require [clojure.test :refer [deftest is are]]
+            [kevin.util :refer [format-query format-name]]))
 
 (deftest test-format-query
-  (is (= "+J* +Digg*" (format-query "J Digg")))
-  (is (= "+J* +Digg* +\\(I\\)" (format-query "J Digg (I)"))))
+  (is (= "+J* +Digg" (format-query "J* Digg")))
+  (is (= "+J +Digg +\\(I\\)" (format-query "J Digg (I)")))
+  (is (= "+Anya +\"Taylor\\-Joy\"" (format-query "Anya Taylor-Joy")))
+  (is (= "+Samuel +L +Jackson" (format-query "Samuel L. Jackson"))))
 
 (deftest test-format-name
   (are [x y] (= (format-name x) y)

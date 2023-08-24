@@ -1,8 +1,7 @@
 (ns kevin.core
-  (:require [datomic.api :as d :refer [q db]]
-            [clojure.string :refer [split join] :as str]
-            [clojure.zip :as zip]
-            [kevin.util :refer :all]
+  (:require [datomic.api :as d :refer [q]]
+            [clojure.string :as str]
+            [kevin.util :as util]
             [kevin.search :refer [bidirectional-bfs]])
   (:import datomic.Datom))
 
@@ -18,8 +17,8 @@
 
 (def acted-with-rules
   '[[(acted-with ?e1 ?e2 ?path)
-     [?e1 :actor/movies ?m]
-     [?e2 :actor/movies ?m]
+     [?e1 :person/roles ?m]
+     [?e2 :person/roles ?m]
      [(!= ?e1 ?e2)]
      [(vector ?e1 ?m ?e2) ?path]]
     [(acted-with-1 ?e1 ?e2 ?path)
@@ -42,59 +41,53 @@
 
 (defn actor-or-movie-name [db eid]
   (let [ent (d/entity db (e eid))]
-    (or (:movie/title ent) (:person/name ent))))
-
-(defn referring-to
-  "Find all entities referring to an eid as a certain attribute."
-  [db eid]
-   (->> (d/datoms db :vaet (e eid))
-        (map :e)))
-
-(defn eids-with-attr-val
-  "Return eids with a given attribute and value."
-  [db attr val]
-  (->> (d/datoms db :avet attr val)
-       (map :e)))
-
-(defn eid->actor-name
-  "db is database value
-  name is the actor's name"
-  [db eid]
-  (-> (d/entity db (e eid))
-      :person/name))
+    (or (:title/title ent) (:person/name ent))))
 
 (defn actor-search
   "Returns set with exact match, if found. Otherwise query will
   be formatted with format-query passed as-is to Lucene"
   [db query]
   (if (str/blank? query)
-    #{}
-    (if-let [eid (d/entid db [:person/name query])]
-      [{:name query :actor-id eid}]
-      (mapv #(zipmap [:actor-id :name] %)
-            (q '[:find ?e ?name
-                 :in $ ?search
-                 :where [(fulltext $ :person/name ?search) [[?e ?name]]]]
-               db (format-query query))))))
+    []
+    (q '[:find ?e ?name ?score (count ?m)
+         :keys id name :score roles
+         :in $ ?search
+         :where
+         [(fulltext $ :person/name ?search) [[?e ?name _ ?score]]]
+         [?e :person/roles ?m]]
+       db (util/format-query query))))
 
 (defn movie-actors
   "Given a datomic database value and a movie id,
   returns ids for actors in that movie."
   [db eid]
-  (map :e (d/datoms db :vaet eid :actor/movies)))
+  (map :e (d/datoms db :vaet eid :person/roles)))
 
 (defn actor-movies
   "Given a datomic database value and an actor id,
   returns ids for movies that actor was in."
   [db eid]
-  (map :v (d/datoms db :eavt eid :actor/movies)))
+  (not-empty
+   (map :v (d/datoms db :eavt eid :person/roles))))
 
-(defn immediate-connections
-  "d is database value
-  eid is actor's entity id"
+(defn collaborators
   [db eid]
-  (->> (actor-movies db eid)
-       (mapcat (partial referring-to db))))
+  (not-empty
+   (map :v
+        (d/datoms db :eavt eid :person/collaborators))))
+
+(defn collaborations [db p1 p2]
+  (q '[:find [(pull ?m [:db/id
+                        :title/title
+                        :title/year
+                        {:title/type [:db/ident]}
+                        {:title/genre [:db/ident]}]) ...]
+       :in $ % ?p1 ?p2
+       :where
+       [?p1 :person/roles ?m]
+       [?p2 :person/roles ?m]
+       (non-ignorable? ?m)]
+     db util/rules p1 p2))
 
 (defn neighbors
   "db is database value
@@ -103,17 +96,8 @@
   (or (seq (actor-movies db (e eid)))
       (seq (movie-actors db (e eid)))))
 
-(defn zipper
-  "db is database value
-  eid is actor's entity id"
-  [db eid]
-  (let [children (partial immediate-connections db)
-        branch? (comp seq children)
-        make-node (fn [_ c] c)]
-    (zip/zipper branch? children make-node eid)))
-
 (defn search [db start end]
-  (let [s (partial actor-search db)
+  (let [s #(sort-by :score > (actor-search db %))
         starts (s start)
         ends (s end)]
     (for [p1 starts, p2 ends]
@@ -136,13 +120,13 @@
     true))
 
 (defn is-documentary? [entity]
-  (let [genres (:movie/genre entity)]
-    (and genres (contains? genres :movie.genre/documentary))))
+  (let [genres (:title/genre entity)]
+    (and genres (contains? genres :title.genre/documentary))))
 
 (defn without-documentaries
   "Returns a function suitable for use with datomic.api/filter"
   [db]
-  (let [movies-attr (d/entid db :actor/movies)
+  (let [movies-attr (d/entid db :person/roles)
         has-documentaries? (fn [db ^Datom datom]
                              (and (= movies-attr (.a datom))
                                   (is-documentary? (d/entity db (.v datom)))))]
@@ -161,7 +145,7 @@
         annotate-node (fn [node]
                         (let [ent (d/entity db node)]
                           {:type (if (:person/name ent) "actor" "movie")
-                           :year (:movie/year ent)
+                           :year (:title/year ent)
                            :name (ename ent)
                            :entity ent}))]
     (->> (find-id-paths db source target)
@@ -181,3 +165,116 @@
      :end   (:name result2)
      :bacon-number bacon-number
      :hard-mode? hard-mode}))
+
+(defn include-pairwise-connections [path]
+  (-> []
+      (into (mapcat (fn [x] [(first x) x]))
+            (partition 2 1 path))
+      (conj (peek path))))
+
+(defn annotate-pairwise-path [db path]
+  (mapv (fn [x]
+          (if (coll? x)
+            (not-empty
+             (mapv (fn [{:title/keys [title year type genre]}]
+                     (str title " (" year ") [" (some-> type :db/ident name) ": "
+                          (str/join ", " (map (comp name :db/ident) genre))
+                          "]"))
+                   (apply collaborations db x)))
+            (:person/name (d/pull db [:person/name] x))))
+        path))
+
+(comment
+
+  (defonce conn (d/connect "datomic:dev://localhost:4334/imdb"))
+
+  (let [start "Clark Gable"
+        end  "Hugh Jackman"
+        db (d/db conn)
+        possibles (search db start end)
+        [[{p1 :id} {p2 :id}] & _] possibles
+        paths (bidirectional-bfs p1 p2 #(collaborators db %))]
+    (for [path paths
+          :let [p (include-pairwise-connections path)
+                annotated (annotate-pairwise-path db p)]
+          :when (every? some? annotated)]
+      annotated))
+
+  (let [db (d/db conn)
+        p1 (:id (first (actor-search db "Hugh Jackman")))
+        all-pairs (q '[:find ?p1 ?p2
+                       :in $ ?p1
+                       :where [?p1 :person/collaborators ?p2]]
+                     db p1)
+        keep-pairs (set (q '[:find ?p1 ?p2
+                             :in $ % ?p1 [?p2 ...]
+                             :where
+                             [?p1 :person/roles ?m]
+                             [?p2 :person/roles ?m]
+                             (not (ignorable? ?m))]
+                           db util/rules p1 (map peek all-pairs)))
+        removed (remove keep-pairs all-pairs)]
+    {:counts {:all (count all-pairs)
+              :keep (count keep-pairs)
+              :remove (count removed)}
+     :keep keep-pairs
+     :remove removed})
+
+  (let [db (d/db conn)
+        [[{p1 :id} {p2 :id}] & _] (search (d/db conn) "Hugh Jackman" "Anne Hathaway")]
+    (q '[:find ?p2 .
+         ;; ?p1 ?p2 (pull ?m1 [:db/id
+         ;;                          :title/title
+         ;;                          :title/year
+         ;;                          {:title/type [:db/ident]}
+         ;;                          {:title/genre [:db/ident]}]) #_[...]
+         :in $ % ?p1 ?p2
+         :where
+         [?p1 :person/roles ?m1]
+         [?p2 :person/roles ?m1]
+         (not (ignorable? ?m1))]
+       db util/rules p1 p2))
+
+  (let [db (d/db conn)]
+    (time
+     (d/qseq
+      {:query '[:find ?p1 ?p2
+                :in $ % [[?p1 ?p2] ...]
+                :where
+                (not-join [?p1 ?p2]
+                          [?p1 :person/roles ?m]
+                          [?p2 :person/roles ?m]
+                          (not (ignorable? ?m)))]
+       :args [db util/rules (take 1000
+                                  (map (juxt :e :v)
+                                       (d/seek-datoms (d/db conn) :aevt :person/collaborators
+                                                      17592202190000)))]
+       :timeout 10000})))
+
+;; Jay Leno
+
+  (d/touch
+   (d/entity (d/db conn) 17592201698067))
+
+;; Anne Hathaway
+  17592201705228
+
+  (let [d (d/db conn)]
+    (->> (d/seek-datoms d :aevt :person/collaborators 17592201898067)
+         (map (juxt :e :v))
+         (partition-all 10)
+         (mapcat (fn [batch]
+                   (->>
+                    (d/query {:query '[:find ?p1 ?p2
+                                       :in $ % [[?p1 ?p2] ...]
+                                       :where
+                                       (not-join [?p1 ?p2]
+                                                 [?p1 :person/roles ?m]
+                                                 [?p2 :person/roles ?m]
+                                                 (not (ignorable? ?m)))]
+                              :args [d util/rules batch]
+                              :timeout 10000})
+                    (map (fn [[p1 p2]] [:db/retract p1 :person/collaborators p2])))))
+         (take 10)))
+
+  :ok)

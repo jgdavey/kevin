@@ -8,7 +8,6 @@
             [ring.server.standalone :refer (serve)]
             [datomic.api :as d :refer (db q)]
             [kevin.system :as sys]
-            [kevin.expunge]
             [kevin.core :refer :all]
             [kevin.search :refer :all]))
 
@@ -62,8 +61,8 @@
         tx-fn (fn [[name movies]]
                 {:db/id (d/tempid :db.part/user)
                 :person/name name
-                :actor/movies (mapv (fn [m] {:db/id (d/tempid :db.part/user)
-                                             :movie/title m}) movies)})]
+                :person/roles (mapv (fn [m] {:db/id (d/tempid :db.part/user)
+                                             :title/title m}) movies)})]
 
     @(d/transact conn (map tx-fn actors))
     (kevin.loader/add-years-to-movies conn)
@@ -79,13 +78,13 @@
      :in $ ?n
      :where
      [?e :person/name ?n]
-     [?e :actor/movies ?m]
-     [?m :movie/title ?mn]]
+     [?e :person/roles ?m]
+     [?m :title/title ?mn]]
    (-> system :db :conn db)
    "Bacon, Kevin (I)")
 
 ;; movies an actor with name like query was in
-(q '[:find [(pull ?e [:person/name {:actor/movies [:movie/title]}]) ...]
+(q '[:find [(pull ?e [:person/name {:person/roles [:title/title]}]) ...]
      :in $ ?q
      :where
      [(fulltext $ :person/name ?q) [[?e ?name]]]]
@@ -93,7 +92,7 @@
    "+Bacon +Kevin")
 
 ;; number of movies, total
-(time (q '[:find (count ?e) :where [?e :movie/title]]
+(time (q '[:find (count ?e) :where [?e :title/title]]
           (-> system :db :conn db)))
 
 ;; number of movies with actors
@@ -101,23 +100,23 @@
   (let [d (-> system :db :conn db)]
     (q '[:find (count ?e)
           :where
-          [?e :movie/title]
-          [_ :actor/movies ?e]]
+          [?e :title/title]
+          [_ :person/roles ?e]]
         d)))
 
 ;; number of movies with no actors
 (time
   (let [d (-> system :db :conn db)
-        movies (q '[:find ?e :where [?e :movie/title]] d)]
+        movies (q '[:find ?e :where [?e :title/title]] d)]
     (->> (map (fn [[id]] (d/entity d id)) movies)
-          (remove (fn [e] (:actor/_movies e)))
+          (remove (fn [e] (:person/_movies e)))
           count)))
 
 ;; retract video games
 (let [d (-> system :db :conn db)]
   (->> (q '[:find ?e ?name
             :where
-            [?e :movie/title ?name]] d)
+            [?e :title/title ?name]] d)
         (filter (fn [[e n]] (not= -1 (.indexOf n "(VG)"))))
         (mapv (fn [[e _]] [:db.fn/retractEntity e]))
         (d/transact (-> system :db :conn))
@@ -199,14 +198,6 @@
                   (acted-with-3 ?actor ?target ?path)]
                 d acted-with-rules clay kevin))))
 
-;; export movies and actors
-(let [d (-> system :db :conn db)
-      reducer (fn [map [k v]] (assoc map k (conj (get map k []) v)))
-      actor-map (->> (kevin.expunge/actor-names "data/movies-small.list.gz" d)
-                    (reduce reducer {}))]
-    (spit "resources/sample.edn" (with-out-str (pr actor-map))))
-
-
 ;; quick n dirty profiling
 (let [d (-> system :db :conn db)
       clay (d/entid d [:person/name "Barth, Clayton"])
@@ -221,8 +212,8 @@
       fd (d/filter d (without-documentaries d))]
   (q '[:find ?m ?t ?g
        :in $ ?t
-       :where [?m :movie/title ?t]
-       [?m :movie/genre ?g]] d "Going to Pieces: The Rise and Fall of the Slasher Film (2006)"))
+       :where [?m :title/title ?t]
+       [?m :title/genre ?g]] d "Going to Pieces: The Rise and Fall of the Slasher Film (2006)"))
 
 ;; Genres and counts
 
@@ -230,14 +221,14 @@
                     (q '[:find ?g (count ?e)
                          :in $
                          :where
-                         [?e :movie/genre ?gid]
+                         [?e :title/genre ?gid]
                          [?gid :db/ident ?g]] d)))
 
 (pprint (map (fn [[g c]] [(name g) c]) (sort-by peek genre-counts)))
 
 (d/touch (d/entity (-> system :db :conn db) 17592191235171))
 
-(deref (d/transact (-> system :db :conn) [[:db/add 17592191235171 :movie/genre 0]]))
+(deref (d/transact (-> system :db :conn) [[:db/add 17592191235171 :title/genre 0]]))
 
 (d/q '[:find ?e ?a ?v
        :in ?log ?t1 ?t2

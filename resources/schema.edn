@@ -1,35 +1,113 @@
-[
- ;; movies
+[;; TITLES
+
+ ;; tconst (string) - alphanumeric unique identifier of the title
  {:db/id #db/id[:db.part/db]
-  :db/ident :movie/title
+  :db/ident :title/tconst
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
-  :db/fulltext true
   :db/unique :db.unique/identity
-  :db/doc "A movie's title (upsertable)"
+  :db/doc "A title's IMDB id"
   :db.install/_attribute :db.part/db}
 
+ ;; titleType (string) – the type/format of the title (e.g. movie, short, tvseries, tvepisode, video, etc)
+ {:db/ident :title/type
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "An title's format or type (e.g. movie, short, tvseries, etc)"}
+ {:db/ident :title.type/movie}
+ {:db/ident :title.type/short}
+ {:db/ident :title.type/video}
+ {:db/ident :title.type/tv.series}
+ {:db/ident :title.type/tv.episode}
+ {:db/ident :title.type/tv.miniseries}
+ {:db/ident :title.type/tv.movie}
+ {:db/ident :title.type/tv.special}
+ {:db/ident :title.type/tv.short}
+ {:db/ident :title.type/videogame}
+
+ ;; primaryTitle (string) – the more popular title / the title used by the filmmakers on promotional materials at the point of release
  {:db/id #db/id[:db.part/db]
-  :db/ident :movie/year
+  :db/ident :title/title
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "A title's primary title"
+  :db.install/_attribute :db.part/db}
+
+ ;; startYear (YYYY) – represents the release year of a title. In the case of TV Series, it is the series start year
+ {:db/id #db/id[:db.part/db]
+  :db/ident :title/year
   :db/valueType :db.type/long
   :db/cardinality :db.cardinality/one
-  :db/doc "A movie's release year"
+  :db/doc "A title's initial release (or start) year"
   :db.install/_attribute :db.part/db}
 
- ;; actors
+ ;; genres (string array) – includes up to three genres associated with the title
+ {:db/ident :title/genre
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "An title's genre(s)"}
+ {:db/ident :title.genre/adult}
+ {:db/ident :title.genre/action}
+ {:db/ident :title.genre/adventure}
+ {:db/ident :title.genre/animation}
+ {:db/ident :title.genre/biography}
+ {:db/ident :title.genre/comedy}
+ {:db/ident :title.genre/crime}
+ {:db/ident :title.genre/documentary}
+ {:db/ident :title.genre/drama}
+ {:db/ident :title.genre/family}
+ {:db/ident :title.genre/fantasy}
+ {:db/ident :title.genre/film-noir}
+ {:db/ident :title.genre/game-show}
+ {:db/ident :title.genre/history}
+ {:db/ident :title.genre/horror}
+ {:db/ident :title.genre/music}
+ {:db/ident :title.genre/musical}
+ {:db/ident :title.genre/mystery}
+ {:db/ident :title.genre/news}
+ {:db/ident :title.genre/reality-tv}
+ {:db/ident :title.genre/romance}
+ {:db/ident :title.genre/sci-fi}
+ {:db/ident :title.genre/short}
+ {:db/ident :title.genre/sport}
+ {:db/ident :title.genre/talk-show}
+ {:db/ident :title.genre/thriller}
+ {:db/ident :title.genre/war}
+ {:db/ident :title.genre/western}
+
+ ;; PEOPLE
+ ;; nconst (string) - alphanumeric unique identifier of the name/person
+ {:db/id #db/id[:db.part/db]
+  :db/ident :person/nconst
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "An person's IMDB id"
+  :db.install/_attribute :db.part/db}
+
+ ;; primaryName (string)– name by which the person is most often credited
  {:db/id #db/id[:db.part/db]
   :db/ident :person/name
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db/fulltext true
-  :db/unique :db.unique/identity
   :db/doc "An person's name (upsertable)"
   :db.install/_attribute :db.part/db}
 
+ ;; ROLES (from roles data, like a join)
  {:db/id #db/id[:db.part/db]
-  :db/ident :actor/movies
+  :db/ident :person/roles
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db/doc "An actor's ref to a movie"
   :db.install/_attribute :db.part/db}
+
+ ;; COLLABORATOR (a shortcut view of shared roles)
+ {:db/id #db/id[:db.part/db]
+  :db/ident :person/collaborators
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "An person's ref to another person"
+  :db.install/_attribute :db.part/db}
+
  ]
