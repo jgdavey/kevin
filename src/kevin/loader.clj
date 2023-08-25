@@ -17,7 +17,7 @@
 ;; Don't change after an import
 (def batch-size 1000)
 
-(def conn-uri "datomic:ddb-local://localhost:8779/local/kevin")
+(def conn-uri "datomic:ddb-local://localhost:8779/test/kevin")
 
 (def BATCHID :kevin.initial-import/batch-id)
 
@@ -227,11 +227,13 @@ tracking."
              (keep parse-long)
              (sort))))
 
-(defn load-batchfile [path]
+(defn read-batchfile [path]
   (with-open [f (io/input-stream path)]
-    (let [r (t/reader f :msgpack)
-          {:keys [batch-ident data]} (t/read r)]
-      @(d/transact-async conn (cons batch-ident data)))))
+    (let [r (t/reader f :msgpack)]
+       (t/read r))))
+
+(defn transact! [{:keys [batch-ident data] :as _batch-data}]
+  @(d/transact-async conn (cons batch-ident data)))
 
 (defn drain
   "Close ch and discard all items on it. Returns nil."
@@ -241,15 +243,21 @@ tracking."
     (when (<! ch) (recur)))
   nil)
 
-(defn load-batchfiles [subdir opts]
-  (println (str "\n\nLoading " subdir))
+(defn load-batchfiles [subdir xform-batch opts]
   (let [parallelism (or (:jobs opts) 2)
         loaded (batches-already-loaded)
         tx-result-ch (async/chan parallelism)
-        batches-ch (async/to-chan! (batches-generated subdir))
-        load-xf (comp (remove #(.contains loaded (:batch-id %)))
-                      (map :path)
-                      (map load-batchfile)
+        all-batches (batches-generated subdir)
+        needed-batches (remove #(.contains loaded (:batch-id %)) all-batches)
+        _ (println (format "\n\nLoading %s of %s %s batches"
+                           (count needed-batches)
+                           (count all-batches)
+                           subdir))
+        batches-ch (async/to-chan! needed-batches)
+        load-xf (comp (map :path)
+                      (map read-batchfile)
+                      xform-batch
+                      (map transact!)
                       (dot 10))
         stop (fn stop []
                (drain batches-ch))
@@ -276,13 +284,30 @@ tracking."
       tx-result-ch))))
 
 (defn load-titles []
-  (load-batchfiles "titles" {}))
+  (load-batchfiles "titles" identity {}))
 
 (defn load-people []
-  (load-batchfiles "people" {}))
+  (load-batchfiles "people" identity {}))
 
 (defn load-roles []
-  (load-batchfiles "roles" {}))
+  (let [db (d/db conn)
+        keep-good (fn [data]
+                    (keep (fn [[_ e _ v :as d]]
+                            (when-let [v (d/q '[:find ?e .
+                                                :in $ [?attr ?ident-value]
+                                                :where
+                                                [?e ?attr ?ident-value]]
+                                              db v)]
+                              (when-let [e (d/q '[:find ?e .
+                                                  :in $ [?attr ?ident-value]
+                                                  :where
+                                                  [?e ?attr ?ident-value]]
+                                                db e)]
+                                (-> d
+                                    (assoc 1 e)
+                                    (assoc 3 v)))))
+                          data))]
+    (load-batchfiles "roles" (map #(update % :data keep-good)) {})))
 
 (defn batch-for-each-person-eid [batches xform]
   (let [out-ch   (chan 1)
